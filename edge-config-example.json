@@ -1,0 +1,42 @@
+{
+  "vehicle-portals": [
+    {
+      "name": "mercadolibre",
+      "enabled": true,
+      "searchParams": {
+        "category": "autos",
+        "location": "argentina",
+        "priceMax": 50000,
+        "yearMin": 2015
+      }
+    },
+    {
+      "name": "autocosmos",
+      "enabled": true,
+      "searchParams": {
+        "condition": "used",
+        "location": "buenos-aires",
+        "priceMax": 40000,
+        "yearMin": 2010
+      }
+    }
+  ],
+  "scraping-config": {
+    "maxPagesPerPortal": 3,
+    "delayBetweenRequests": 2000,
+    "requestTimeout": 30000,
+    "maxRetries": 3,
+    "enableAIProcessing": true,
+    "enableImageUpload": true
+  },
+  "ai-service-config": {
+    "endpoint": "/analyze",
+    "timeout": 60000,
+    "features": [
+      "price-analysis",
+      "opportunity-detection",
+      "market-comparison",
+      "condition-assessment"
+    ]
+  }
+}
