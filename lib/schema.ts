@@ -265,6 +265,54 @@ export const images = pgTable('images', {
   primaryIdx: index('images_primary_idx').on(table.isPrimary)
 }));
 
+// URL Exploration Tracking Table
+export const exploredUrls = pgTable('explored_urls', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  url: text('url').notNull().unique(),
+  dealershipId: uuid('dealership_id').references(() => dealerships.id, { onDelete: 'cascade' }),
+  urlType: varchar('url_type', { length: 50 }).notNull(), // 'vehicle_listing', 'pagination', 'category', etc.
+  
+  // Discovery info
+  discoveredByAgent: varchar('discovered_by_agent', { length: 100 }), // Which agent found this URL
+  parentUrl: text('parent_url'), // URL that led to this discovery
+  discoveryMethod: varchar('discovery_method', { length: 50 }), // 'html_parsing', 'sitemap', 'api', etc.
+  
+  // Processing status  
+  status: varchar('status', { length: 50 }).notNull().default('discovered'), // discovered, processing, processed, failed, deprecated
+  lastProcessedAt: timestamp('last_processed_at'),
+  processingAttempts: integer('processing_attempts').default(0),
+  
+  // Content analysis
+  contentType: varchar('content_type', { length: 100 }), // detected content type
+  hasVehicleData: boolean('has_vehicle_data').default(false),
+  vehicleCount: integer('vehicle_count').default(0), // how many vehicles found on this URL
+  
+  // Success tracking
+  vehiclesExtracted: integer('vehicles_extracted').default(0), // successful extractions
+  lastSuccessfulExtraction: timestamp('last_successful_extraction'),
+  
+  // Error tracking
+  lastError: text('last_error'),
+  consecutiveFailures: integer('consecutive_failures').default(0),
+  
+  // Lifecycle management
+  isActive: boolean('is_active').default(true),
+  deprecatedAt: timestamp('deprecated_at'), // when URL became invalid/outdated
+  expiresAt: timestamp('expires_at'), // when to stop trying this URL
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+}, (table) => ({
+  dealershipIdx: index('explored_urls_dealership_idx').on(table.dealershipId),
+  statusIdx: index('explored_urls_status_idx').on(table.status),
+  typeIdx: index('explored_urls_type_idx').on(table.urlType),
+  activeIdx: index('explored_urls_active_idx').on(table.isActive),
+  lastProcessedIdx: index('explored_urls_last_processed_idx').on(table.lastProcessedAt),
+  hasVehicleDataIdx: index('explored_urls_has_vehicle_data_idx').on(table.hasVehicleData),
+  agentIdx: index('explored_urls_agent_idx').on(table.discoveredByAgent),
+  createdAtIdx: index('explored_urls_created_at_idx').on(table.createdAt)
+}));
+
 // Agent System Tables
 export const agentJobs = pgTable('agent_jobs', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
@@ -375,6 +423,9 @@ export const schema = {
   images,
   vehicleImages,
   
+  // URL tracking tables
+  exploredUrls,
+  
   // Agent system tables
   agentJobs,
   agentMemory,
@@ -392,6 +443,8 @@ export type Dealership = typeof dealerships.$inferSelect;
 export type NewDealership = typeof dealerships.$inferInsert;
 export type VehicleImage = typeof vehicleImages.$inferSelect;
 export type NewVehicleImage = typeof vehicleImages.$inferInsert;
+export type ExploredUrl = typeof exploredUrls.$inferSelect;
+export type NewExploredUrl = typeof exploredUrls.$inferInsert;
 
 // Existing type exports
 export type Vehicle = typeof vehicles.$inferSelect;
