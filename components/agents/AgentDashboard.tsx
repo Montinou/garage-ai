@@ -17,7 +17,7 @@ import {
   Clock,
   Database,
   Filter,
-  RefreshCwCw,
+  RefreshCw,
   Search,
   Server,
   TrendingUp,

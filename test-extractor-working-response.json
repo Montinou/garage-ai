@@ -1,0 +1,14 @@
+{
+    "predict_endpoint": {"detail":"Not Found"},
+    "timestamp": "2025-08-05T18:24:47Z",
+    "url": "https://genai-app-garage-ai-extractor-es-1-1754372178123-a5flyt5a6a-uc.a.run.app",
+    "payload": {
+    "data": [
+        {
+            "text": "Extrae los datos del vehículo del siguiente contenido web: <html><body><h1>Toyota Corolla 2020</h1><div class="price">$15,000</div></body></html>",
+            "files": []
+        }
+    ],
+    "fn_index": 0
+}
+}
