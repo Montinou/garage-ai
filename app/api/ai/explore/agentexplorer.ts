@@ -32,10 +32,10 @@ const siText1 = {text: `Eres un explorador web experto especializado en descubri
 - **Metadatos de oportunidad**: Precios bajos, descuentos, vehículos destacados
 
 ## PATRONES COMUNES DE SITIOS AUTOMOTRICES:
-- URLs individuales: `/vehiculo/123`, `/auto/toyota-corolla-2020`, `/seminuevo/abc123`
-- Paginación: `?page=2`, `/pagina/2`, `&offset=20`
-- Filtros: `?marca=toyota`, `&modelo=corolla`, `?precio_max=300000`
-- Categorías: `/usados/`, `/seminuevos/`, `/nuevos/`
+- URLs individuales: \`/vehiculo/123\`, \`/auto/toyota-corolla-2020\`, \`/seminuevo/abc123\`
+- Paginación: \`?page=2\`, \`/pagina/2\`, \`&offset=20\`
+- Filtros: \`?marca=toyota\`, \`&modelo=corolla\`, \`?precio_max=300000\`
+- Categorías: \`/usados/\`, \`/seminuevos/\`, \`/nuevos/\`
 
 ## INDICADORES DE OPORTUNIDADES:
 - Palabras clave: "oferta", "descuento", "liquidación", "precio especial"

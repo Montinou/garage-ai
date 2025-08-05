@@ -167,7 +167,6 @@ export const vehicleImages = pgTable('vehicle_images', {
   statusIdx: index('vehicle_images_status_idx').on(table.uploadStatus),
   gcsPathIdx: index('vehicle_images_gcs_path_idx').on(table.gcsPath)
 }));
-
 // Core Vehicle Tables (existing)
 export const brands = pgTable('brands', {
   id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
