@@ -1,10 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
+import { config } from './config'
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
+// Initialize configuration
+let supabaseConfig: {
+  url: string;
+  serviceRoleKey: string;
+  anonKey: string;
+} | null = null;
+
+try {
+  // Try to get configuration synchronously if already initialized
+  supabaseConfig = config.getSupabaseConfig();
+} catch {
+  // Configuration not initialized yet, use environment variables as fallback
+  supabaseConfig = {
+    url: process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key',
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+  };
+}
 
 // Create Supabase client for server-side operations
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabase = createClient(supabaseConfig.url, supabaseConfig.serviceRoleKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -13,8 +30,31 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 // Create Supabase client for client-side operations (with anon key)
 export const createClientSideSupabase = () => {
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
-  return createClient(supabaseUrl, supabaseAnonKey)
+  return createClient(supabaseConfig!.url, supabaseConfig!.anonKey)
+}
+
+// Function to reinitialize Supabase clients with proper configuration
+export const initializeSupabaseWithConfig = async () => {
+  try {
+    await config.initialize();
+    const newConfig = config.getSupabaseConfig();
+    
+    // Note: We can't reassign the exported constants, but we can log the proper configuration
+    console.log('Supabase configuration validated:', {
+      url: newConfig.url,
+      hasServiceKey: !!newConfig.serviceRoleKey,
+      hasAnonKey: !!newConfig.anonKey
+    });
+    
+    return {
+      url: newConfig.url,
+      serviceRoleKey: newConfig.serviceRoleKey,
+      anonKey: newConfig.anonKey
+    };
+  } catch (error) {
+    console.error('Failed to initialize Supabase configuration:', error);
+    throw error;
+  }
 }
 
 // Types for our database schema

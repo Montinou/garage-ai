@@ -308,3 +308,277 @@ BEGIN
     ORDER BY i.image_order ASC, i.created_at ASC;
 END;
 $$ LANGUAGE plpgsql;
+
+-- AI Agents System Tables
+-- These tables support the agent infrastructure for automated vehicle data processing
+
+-- Agent jobs table - tracks all agent job executions
+CREATE TABLE agent_jobs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agent_id VARCHAR(255) NOT NULL,
+    agent_type VARCHAR(100) NOT NULL,
+    job_type VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    priority VARCHAR(20) NOT NULL DEFAULT 'normal',
+    payload JSONB,
+    result JSONB,
+    error_message TEXT,
+    retry_count INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+    config JSONB,
+    scheduled_at TIMESTAMPTZ,
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    failed_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Agent memory table - stores persistent memory for agents
+CREATE TABLE agent_memory (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agent_id VARCHAR(255) NOT NULL,
+    memory_key VARCHAR(500) NOT NULL,
+    memory_value JSONB NOT NULL,
+    memory_type VARCHAR(50) NOT NULL,
+    ttl INTEGER, -- Time to live in milliseconds
+    tags TEXT[],
+    access_count INTEGER DEFAULT 0,
+    expires_at TIMESTAMPTZ,
+    last_accessed TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(agent_id, memory_key)
+);
+
+-- Agent metrics table - tracks performance metrics for each agent
+CREATE TABLE agent_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agent_id VARCHAR(255) UNIQUE NOT NULL,
+    agent_type VARCHAR(100) NOT NULL,
+    total_jobs INTEGER DEFAULT 0,
+    successful_jobs INTEGER DEFAULT 0,
+    failed_jobs INTEGER DEFAULT 0,
+    average_execution_time NUMERIC(10,2) DEFAULT 0,
+    last_job_time TIMESTAMPTZ,
+    memory_usage BIGINT DEFAULT 0,
+    error_rate NUMERIC(5,4) DEFAULT 0,
+    uptime BIGINT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Agent messages table - inter-agent communication
+CREATE TABLE agent_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    type VARCHAR(50) NOT NULL DEFAULT 'broadcast',
+    from_agent VARCHAR(255) NOT NULL,
+    to_agent VARCHAR(255),
+    topic VARCHAR(255) NOT NULL,
+    payload JSONB NOT NULL,
+    priority VARCHAR(20) NOT NULL DEFAULT 'normal',
+    processed BOOLEAN DEFAULT FALSE,
+    processed_at TIMESTAMPTZ,
+    status VARCHAR(50) DEFAULT 'pending',
+    expires_at TIMESTAMPTZ,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Agent orchestrations table - workflow execution tracking
+CREATE TABLE agent_orchestrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workflow_id VARCHAR(255) UNIQUE NOT NULL,
+    workflow_name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    parameters JSONB,
+    constraints JSONB,
+    callbacks JSONB,
+    metadata JSONB,
+    steps JSONB,
+    result JSONB,
+    error_message TEXT,
+    total_execution_time BIGINT,
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for agent tables
+CREATE INDEX idx_agent_jobs_agent_id ON agent_jobs(agent_id);
+CREATE INDEX idx_agent_jobs_agent_type ON agent_jobs(agent_type);
+CREATE INDEX idx_agent_jobs_status ON agent_jobs(status);
+CREATE INDEX idx_agent_jobs_priority ON agent_jobs(priority);
+CREATE INDEX idx_agent_jobs_created_at ON agent_jobs(created_at);
+CREATE INDEX idx_agent_jobs_scheduled_at ON agent_jobs(scheduled_at);
+
+CREATE INDEX idx_agent_memory_agent_id ON agent_memory(agent_id);
+CREATE INDEX idx_agent_memory_key ON agent_memory(memory_key);
+CREATE INDEX idx_agent_memory_expires_at ON agent_memory(expires_at);
+CREATE INDEX idx_agent_memory_tags ON agent_memory USING GIN(tags);
+CREATE INDEX idx_agent_memory_type ON agent_memory(memory_type);
+
+CREATE INDEX idx_agent_metrics_agent_id ON agent_metrics(agent_id);
+CREATE INDEX idx_agent_metrics_agent_type ON agent_metrics(agent_type);
+CREATE INDEX idx_agent_metrics_updated_at ON agent_metrics(updated_at);
+
+CREATE INDEX idx_agent_messages_from_agent ON agent_messages(from_agent);
+CREATE INDEX idx_agent_messages_to_agent ON agent_messages(to_agent);
+CREATE INDEX idx_agent_messages_topic ON agent_messages(topic);
+CREATE INDEX idx_agent_messages_processed ON agent_messages(processed);
+CREATE INDEX idx_agent_messages_created_at ON agent_messages(created_at);
+CREATE INDEX idx_agent_messages_expires_at ON agent_messages(expires_at);
+
+CREATE INDEX idx_agent_orchestrations_workflow_id ON agent_orchestrations(workflow_id);
+CREATE INDEX idx_agent_orchestrations_status ON agent_orchestrations(status);
+CREATE INDEX idx_agent_orchestrations_created_at ON agent_orchestrations(created_at);
+
+-- Enable Row Level Security on agent tables
+ALTER TABLE agent_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agent_memory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agent_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agent_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agent_orchestrations ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for agent tables
+
+-- agent_jobs policies
+CREATE POLICY "Service role can manage agent jobs" ON agent_jobs
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can read agent jobs" ON agent_jobs
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+-- agent_memory policies
+CREATE POLICY "Service role can manage agent memory" ON agent_memory
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can read agent memory" ON agent_memory
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+-- agent_metrics policies
+CREATE POLICY "Service role can manage agent metrics" ON agent_metrics
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Public read access for agent metrics" ON agent_metrics
+    FOR SELECT USING (true);
+
+-- agent_messages policies
+CREATE POLICY "Service role can manage agent messages" ON agent_messages
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can read agent messages" ON agent_messages
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+-- agent_orchestrations policies
+CREATE POLICY "Service role can manage orchestrations" ON agent_orchestrations
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can read orchestrations" ON agent_orchestrations
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Create triggers for updated_at columns
+CREATE TRIGGER update_agent_jobs_updated_at BEFORE UPDATE ON agent_jobs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_agent_memory_updated_at BEFORE UPDATE ON agent_memory
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_agent_metrics_updated_at BEFORE UPDATE ON agent_metrics
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_agent_messages_updated_at BEFORE UPDATE ON agent_messages
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_agent_orchestrations_updated_at BEFORE UPDATE ON agent_orchestrations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Add constraints and checks for agent tables
+ALTER TABLE agent_jobs ADD CONSTRAINT check_status_valid CHECK (
+    status IN ('pending', 'running', 'completed', 'failed', 'cancelled', 'retrying')
+);
+
+ALTER TABLE agent_jobs ADD CONSTRAINT check_priority_valid CHECK (
+    priority IN ('low', 'normal', 'high', 'urgent')
+);
+
+ALTER TABLE agent_jobs ADD CONSTRAINT check_retry_count_positive CHECK (retry_count >= 0);
+ALTER TABLE agent_jobs ADD CONSTRAINT check_max_retries_positive CHECK (max_retries >= 0);
+
+ALTER TABLE agent_memory ADD CONSTRAINT check_ttl_positive CHECK (ttl IS NULL OR ttl > 0);
+ALTER TABLE agent_memory ADD CONSTRAINT check_access_count_positive CHECK (access_count >= 0);
+
+ALTER TABLE agent_metrics ADD CONSTRAINT check_job_counts_positive CHECK (
+    total_jobs >= 0 AND successful_jobs >= 0 AND failed_jobs >= 0
+);
+ALTER TABLE agent_metrics ADD CONSTRAINT check_execution_time_positive CHECK (average_execution_time >= 0);
+ALTER TABLE agent_metrics ADD CONSTRAINT check_error_rate_valid CHECK (error_rate >= 0 AND error_rate <= 1);
+ALTER TABLE agent_metrics ADD CONSTRAINT check_uptime_positive CHECK (uptime >= 0);
+
+ALTER TABLE agent_messages ADD CONSTRAINT check_message_type_valid CHECK (
+    type IN ('task', 'status', 'error', 'broadcast', 'direct')
+);
+
+ALTER TABLE agent_messages ADD CONSTRAINT check_message_priority_valid CHECK (
+    priority IN ('low', 'normal', 'high', 'urgent')
+);
+
+ALTER TABLE agent_orchestrations ADD CONSTRAINT check_orchestration_status_valid CHECK (
+    status IN ('pending', 'running', 'completed', 'failed', 'cancelled')
+);
+
+-- Create utility functions for agent system
+
+-- Function to cleanup expired memory entries
+CREATE OR REPLACE FUNCTION cleanup_expired_agent_memory()
+RETURNS INTEGER AS $$
+DECLARE
+    deleted_count INTEGER;
+BEGIN
+    DELETE FROM agent_memory 
+    WHERE expires_at IS NOT NULL AND expires_at < NOW();
+    
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to cleanup expired messages
+CREATE OR REPLACE FUNCTION cleanup_expired_agent_messages()
+RETURNS INTEGER AS $$
+DECLARE
+    deleted_count INTEGER;
+BEGIN
+    DELETE FROM agent_messages 
+    WHERE expires_at IS NOT NULL AND expires_at < NOW();
+    
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get agent statistics
+CREATE OR REPLACE FUNCTION get_agent_system_stats()
+RETURNS TABLE (
+    total_agents BIGINT,
+    active_agents BIGINT,
+    total_jobs BIGINT,
+    completed_jobs BIGINT,
+    failed_jobs BIGINT,
+    pending_jobs BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(DISTINCT agent_id) as total_agents,
+        COUNT(DISTINCT CASE WHEN status IN ('idle', 'busy') THEN agent_id END) as active_agents,
+        COUNT(*) as total_jobs,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_jobs,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_jobs,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_jobs
+    FROM agent_jobs;
+END;
+$$ LANGUAGE plpgsql;
