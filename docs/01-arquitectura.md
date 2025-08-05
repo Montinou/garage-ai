@@ -208,7 +208,6 @@ class SystemMonitor {
       services: await this.checkServices(),
       data: await this.checkDataIntegrity()
     };
-    
     return this.aggregateHealth(health);
   }
 }
