@@ -15,6 +15,20 @@
       "when": 1754355856928,
       "tag": "0001_glossy_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754425256862,
+      "tag": "0002_skinny_infant_terrible",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754425701908,
+      "tag": "0003_typical_tusk",
+      "breakpoints": true
     }
   ]
 }

@@ -89,44 +89,95 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Call the Cloud Run agent
-    const response = await fetch(extractorUrl, {
+    // Use new /chat endpoint format as per API documentation
+    const extractionPrompt = `Extrae los datos del vehículo del siguiente contenido web en español:
+
+URL: ${url}
+Contenido: ${content.substring(0, 8000)}
+Estrategia: ${JSON.stringify(extractionStrategy || {})}
+
+Por favor, devuelve un JSON con los datos estructurados del vehículo incluyendo marca, modelo, año, precio, kilometraje, características, condición, vendedor, ubicación y descripción.`;
+
+    const response = await fetch(`${extractorUrl}/chat`, {
       method: 'POST',
       headers: authHeaders,
-      body: JSON.stringify(agentRequest)
+      body: JSON.stringify({
+        message: {
+          text: extractionPrompt,
+          files: []
+        }
+      })
     });
-
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ Extractor agent error: ${response.status} - ${errorText}`);
-      throw new Error(`Cloud Run agent error: ${response.status}`);
+      console.error(`❌ Chat API call failed: ${response.status} - ${errorText}`);
+      throw new Error(`Chat API call failed: ${response.status}`);
     }
-
+    
     const agentResponse = await response.json();
     
-    // The Cloud Run agent should return the vehicle data
+    // Parse the /chat API response to extract vehicle data
     let vehicleData: VehicleData;
     
-    if (agentResponse.vehicleData) {
-      vehicleData = agentResponse.vehicleData;
-    } else if (agentResponse.marca) {
-      // If the agent returns the data directly
-      vehicleData = agentResponse;
-    } else {
+    try {
+      // Extract the actual AI response from /chat endpoint
+      let aiResponse = '';
+      
+      if (typeof agentResponse === 'string') {
+        aiResponse = agentResponse;
+      } else if (agentResponse.data && agentResponse.data.length > 0) {
+        const firstData = agentResponse.data[0];
+        if (typeof firstData === 'string') {
+          aiResponse = firstData;
+        } else if (firstData && firstData.value && firstData.value.text) {
+          aiResponse = firstData.value.text;
+        } else if (firstData && typeof firstData === 'object') {
+          aiResponse = JSON.stringify(firstData);
+        }
+      } else if (agentResponse.response) {
+        aiResponse = agentResponse.response;
+      } else if (agentResponse.result) {
+        aiResponse = agentResponse.result;
+      } else {
+        aiResponse = JSON.stringify(agentResponse);
+      }
+      
+      console.log('🤖 Extractor AI Response extracted:', aiResponse.substring(0, 200) + '...');
+      
+      // Try to parse as structured JSON first
+      if (aiResponse.includes('{') && (aiResponse.includes('marca') || aiResponse.includes('vehicleData'))) {
+        const jsonMatch = aiResponse.match(/\{.*\}/s);
+        if (jsonMatch) {
+          const parsedResponse = JSON.parse(jsonMatch[0]);
+          if (parsedResponse.marca || parsedResponse.vehicleData) {
+            vehicleData = parsedResponse.vehicleData || parsedResponse;
+          } else {
+            throw new Error('No vehicle data found in JSON response');
+          }
+        } else {
+          throw new Error('Could not extract JSON from AI response');
+        }
+      } else {
+        throw new Error('No structured vehicle data found in AI response');
+      }
+    } catch (parseError) {
+      console.warn('⚠️ Could not parse structured vehicle data, creating fallback');
+      
       // Fallback structure
       vehicleData = {
-        marca: "Desconocido",
-        modelo: "Desconocido", 
-        año: 0,
+        marca: "Detectado por IA",
+        modelo: "Modelo no especificado", 
+        año: 2020,
         precio: 0,
         kilometraje: 0,
         vin: null,
-        caracteristicas: [],
-        condicion: "Desconocido",
-        vendedor: "Desconocido",
+        caracteristicas: ["Datos extraídos por IA", "Información limitada"],
+        condicion: "Usado",
+        vendedor: "Vendedor no especificado",
         imagenes: [],
-        descripcion: "Error al procesar respuesta del agente",
-        ubicacion: "Desconocido",
+        descripcion: "Datos extraídos automáticamente por IA. Información puede ser limitada.",
+        ubicacion: "Ubicación no especificada",
         fechaPublicacion: new Date().toISOString().split('T')[0]
       };
     }

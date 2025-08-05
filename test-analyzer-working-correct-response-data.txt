@@ -1,0 +1,7 @@
+data: {"msg":"estimation","event_id":"aee63d3814d54b0795be8b78030d871a","rank":0,"queue_size":1,"rank_eta":null}
+
+data: {"msg":"process_starts","event_id":"aee63d3814d54b0795be8b78030d871a","eta":null}
+
+data: {"msg":"process_completed","event_id":"aee63d3814d54b0795be8b78030d871a","output":{"error":"Please open the app from\n<a target='_blank'\n  href='https://console.cloud.google.com/vertex-ai/studio/saved-prompts/locations/us-central1/9179373979557691392?project=analog-medium-451706-m7&deploy=true'>\n  Vertex AI Studio\n</a>, not Cloud Run.<br/><br/>\nOr, obtain the key from the \"Manage App\" dialog within Vertex AI Studio and\nappend it to the url as \"?key=SECRET_KEY\".","duration":null,"visible":true,"title":"[Authorization error] The provided key (\"33a3aq0i3s2lh9up\") is invalid."},"success":false,"title":"[Authorization error] The provided key (\"33a3aq0i3s2lh9up\") is invalid."}
+
+data: {"msg":"close_stream","event_id":null}

@@ -1,0 +1,7 @@
+data: {"msg":"estimation","event_id":"35bf9f9777ad42a3bbeb5ed75f8ac8ad","rank":0,"queue_size":1,"rank_eta":null}
+
+data: {"msg":"process_starts","event_id":"35bf9f9777ad42a3bbeb5ed75f8ac8ad","eta":null}
+
+data: {"msg":"process_completed","event_id":"35bf9f9777ad42a3bbeb5ed75f8ac8ad","output":{"error":"400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Unable to submit request because it must include at least one parts field, which describes the prompt input. Learn more: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini', 'status': 'INVALID_ARGUMENT'}}"},"success":false,"title":"Error"}
+
+data: {"msg":"close_stream","event_id":null}

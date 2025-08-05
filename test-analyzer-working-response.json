@@ -1,0 +1,21 @@
+{
+    "predict_endpoint": {"detail":"Not Found"},
+    "timestamp": "2025-08-05T18:24:47Z",
+    "url": "https://genai-app-vehicleanalyzeragent-1-1754371628143-a5flyt5a6a-uc.a.run.app",
+    "payload": {
+    "data": [
+        {
+            "text": "Analiza esta página web para extracción de datos de vehículos:
+
+URL: https://example.com/vehiculo-toyota-corolla
+Contenido HTML: <html><head><title>Toyota Corolla 2020</title></head><body><h1>Toyota Corolla</h1><p>Precio: $15,000</p><p>Año: 2020</p><p>Kilometraje: 50,000 km</p></body></html>
+User Agent: Mozilla/5.0
+Contexto adicional: Venta de vehículo usado
+
+Por favor, analiza la estructura de la página y proporciona un análisis estructurado con selectores CSS, campos de datos detectados, método de extracción recomendado, desafíos identificados, nivel de confianza y tiempo estimado de procesamiento.",
+            "files": []
+        }
+    ],
+    "fn_index": 0
+}
+}

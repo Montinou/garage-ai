@@ -104,40 +104,93 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Call the Cloud Run agent
-    const response = await fetch(validatorUrl, {
+    // Use new /chat endpoint format as per API documentation
+    const validationPrompt = `Valida y califica la calidad de los siguientes datos de vehículo en español:
+
+Datos del vehículo:
+${JSON.stringify(vehicleData, null, 2)}
+
+Contexto:
+${JSON.stringify(context || {}, null, 2)}
+
+Por favor, devuelve un JSON con la validación que incluya: esValido, completitud, precision, consistencia, problemas[], puntuacionCalidad, esDuplicado, recomendaciones[], e insightsMercado.`;
+
+    const response = await fetch(`${validatorUrl}/chat`, {
       method: 'POST',
       headers: authHeaders,
-      body: JSON.stringify(agentRequest)
+      body: JSON.stringify({
+        message: {
+          text: validationPrompt,
+          files: []
+        }
+      })
     });
-
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ Validator agent error: ${response.status} - ${errorText}`);
-      throw new Error(`Cloud Run agent error: ${response.status}`);
+      console.error(`❌ Chat API call failed: ${response.status} - ${errorText}`);
+      throw new Error(`Chat API call failed: ${response.status}`);
     }
 
     const agentResponse = await response.json();
     
-    // The Cloud Run agent should return the validation result
+    // Parse the /chat API response to extract validation result
     let validation: ValidationResult;
     
-    if (agentResponse.validation) {
-      validation = agentResponse.validation;
-    } else if (agentResponse.esValido !== undefined) {
-      // If the agent returns the validation directly
-      validation = agentResponse;
-    } else {
+    try {
+      // Extract the actual AI response from /chat endpoint
+      let aiResponse = '';
+      
+      if (typeof agentResponse === 'string') {
+        aiResponse = agentResponse;
+      } else if (agentResponse.data && agentResponse.data.length > 0) {
+        const firstData = agentResponse.data[0];
+        if (typeof firstData === 'string') {
+          aiResponse = firstData;
+        } else if (firstData && firstData.value && firstData.value.text) {
+          aiResponse = firstData.value.text;
+        } else if (firstData && typeof firstData === 'object') {
+          aiResponse = JSON.stringify(firstData);
+        }
+      } else if (agentResponse.response) {
+        aiResponse = agentResponse.response;
+      } else if (agentResponse.result) {
+        aiResponse = agentResponse.result;
+      } else {
+        aiResponse = JSON.stringify(agentResponse);
+      }
+      
+      console.log('🤖 Validator AI Response extracted:', aiResponse.substring(0, 200) + '...');
+      
+      // Try to parse as structured JSON first
+      if (aiResponse.includes('{') && (aiResponse.includes('esValido') || aiResponse.includes('validation'))) {
+        const jsonMatch = aiResponse.match(/\{.*\}/s);
+        if (jsonMatch) {
+          const parsedResponse = JSON.parse(jsonMatch[0]);
+          if (parsedResponse.esValido !== undefined || parsedResponse.validation) {
+            validation = parsedResponse.validation || parsedResponse;
+          } else {
+            throw new Error('No validation data found in JSON response');
+          }
+        } else {
+          throw new Error('Could not extract JSON from AI response');
+        }
+      } else {
+        throw new Error('No structured validation data found in AI response');
+      }
+    } catch (parseError) {
+      console.warn('⚠️ Could not parse structured validation data, creating fallback');
+      
       // Fallback validation with basic checks
       validation = {
         esValido: !!(vehicleData.marca && vehicleData.modelo && vehicleData.año && vehicleData.precio),
         completitud: Object.values(vehicleData).filter(v => v != null && v !== '').length / Object.keys(vehicleData).length,
         precision: 0.7, // Default estimate
         consistencia: 0.7,
-        problemas: ['Error al procesar respuesta del agente de validación'],
+        problemas: ['Validación por IA no disponible, usando validación básica'],
         puntuacionCalidad: 70, // Default score
         esDuplicado: false,
-        recomendaciones: ['Revisar manualmente los datos del vehículo']
+        recomendaciones: ['Revisar manualmente los datos del vehículo', 'Validación completa con IA no disponible']
       };
       
       // Add basic issue detection

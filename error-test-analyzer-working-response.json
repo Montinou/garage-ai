@@ -1,0 +1,6 @@
+{
+  "error": "SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON",
+  "stack": "Error: SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON\n    at Client._resolve_config (file:///mnt/e/Projects/scrappers/garage-ai/node_modules/@gradio/client/dist/index.js:2510:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Client.init (file:///mnt/e/Projects/scrappers/garage-ai/node_modules/@gradio/client/dist/index.js:2402:5)\n    at async Client.connect (file:///mnt/e/Projects/scrappers/garage-ai/node_modules/@gradio/client/dist/index.js:2444:5)\n    at async testServiceWithAuth (/mnt/e/Projects/scrappers/garage-ai/temp_gradio_analyzer.js:16:24)",
+  "timestamp": "2025-08-05T18:54:39.412Z",
+  "service": "analyzer"
+}

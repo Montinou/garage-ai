@@ -1,0 +1,8 @@
+{
+    "join_response": {"detail":[{"type":"json_invalid","loc":["body",109],"msg":"JSON decode error","input":{},"ctx":{"error":"Invalid control character at"}}]},
+    "data_response": "data: {\"msg\":\"unexpected_error\",\"event_id\":null,\"message\":\"404: Session not found.\",\"success\":false}",
+    "session_hash": "garage-ai-test-1754418326-218e4b8f",
+    "event_id": "",
+    "timestamp": "2025-08-05T18:25:29Z",
+    "url": "https://genai-app-vehicleanalyzeragent-1-1754371628143-a5flyt5a6a-uc.a.run.app"
+}

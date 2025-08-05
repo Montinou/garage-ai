@@ -1,0 +1,6 @@
+{
+  "agent": "extractor",
+  "input": "Extrae los datos del vehículo del siguiente contenido web en español:\n\nURL: https://example.com/vehiculo-toyota-corolla\nContenido: <html><body><h1>Toyota Corolla 2020</h1><div class=\"price\">$15,000</div><div class=\"year\">2020</div><div class=\"mileage\">50,000 km</div><div class=\"condition\">Usado</div><div class=\"location\">Ciudad de México</div></body></html>\n\nPor favor, devuelve un JSON con los datos estructurados del vehículo.",
+  "output": "```json\n{\n \"marca\": \"Toyota\",\n \"modelo\": \"Corolla\",\n \"año\": 2020,\n \"precio\": 15000,\n \"kilometraje\": 50000,\n \"vin\": null,\n \"condicion\": \"Usado\",\n \"caracteristicas\": [],\n \"vendedor\": null,\n \"imagenes\": [],\n \"descripcion\": null,\n \"ubicacion\": \"Ciudad de México\",\n \"fechaPublicacion\": null\n}\n```",
+  "timestamp": "2025-08-05T19:39:22.856Z"
+}
