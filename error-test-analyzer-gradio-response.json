@@ -1,4 +1,0 @@
-{
-  "error": "Please open the app from\n<a target='_blank'\n  href='https://console.cloud.google.com/vertex-ai/studio/saved-prompts/locations/us-central1/4351515179016519680?project=analog-medium-451706-m7&deploy=true'>\n  Vertex AI Studio\n</a>, not Cloud Run.<br/><br/>\nOr, obtain the key from the \"Manage App\" dialog within Vertex AI Studio and\nappend it to the url as \"?key=SECRET_KEY\".",
-  "timestamp": "2025-08-05T19:25:16.911Z"
-}

@@ -1,7 +1,0 @@
-{
-    "chat_endpoint": {"detail":"Not Found"},
-    "predict_endpoint": {"detail":"Not Found"},
-    "call_chat_endpoint": {"detail":"Not Found"},
-    "api_info": {"detail":"Not Found"},
-    "timestamp": "2025-08-05T18:23:59Z"
-}

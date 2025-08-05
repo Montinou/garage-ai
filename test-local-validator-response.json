@@ -1,6 +1,0 @@
-{
-  "agent": "validator",
-  "input": "Valida y califica la calidad de los siguientes datos de vehículo en español:\n\nDatos del vehículo:\n{\n  \"marca\": \"Toyota\",\n  \"modelo\": \"Corolla\", \n  \"año\": 2020,\n  \"precio\": 15000,\n  \"kilometraje\": 50000,\n  \"condicion\": \"Usado\",\n  \"ubicacion\": \"Ciudad de México\"\n}\n\nPor favor, devuelve un JSON con la validación completa.",
-  "output": "```json\n{\n  \"esValido\": true,\n  \"completitud\": 0.86,\n  \"precision\": 0.95,\n  \"consistencia\": 0.90,\n  \"problemas\": [\"Falta número VIN\"],\n  \"puntuacionCalidad\": 92,\n  \"esDuplicado\": false,\n  \"recomendaciones\": [\"Añadir número VIN para mejorar la confianza del listado\", \"Considerar añadir más detalles sobre el equipamiento del vehículo (ej. tipo de transmisión, extras)\"],\n  \"insightsMercado\": {\n    \"rangoPrecios\": \"Rango típico: $250,000 - $350,000 MXN (dependiendo del equipamiento y condición)\",\n    \"kilometrajeEsperado\": \"Esperado: 40,000 - 70,000 km\",\n    \"caracteristicasComunes\": [\"Aire acondicionado\", \"Sistema de audio\", \"Bolsas de aire frontales\"]\n  }\n}\n```",
-  "timestamp": "2025-08-05T19:39:30.440Z"
-}
