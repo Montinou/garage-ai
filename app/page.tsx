@@ -1,5 +1,6 @@
 import Image from "next/image"
-import { Search, MapPin, Calendar, Fuel, Settings, ChevronRight } from "lucide-react"
+import Link from "next/link"
+import { Search, MapPin, Calendar, Fuel, Settings, ChevronRight, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -85,6 +86,10 @@ export default function AutoOportunidadIA() {
                 <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Buscar
                 </a>
+                <Link href="/agents" className="text-gray-300 hover:text-white transition-colors flex items-center">
+                  <Activity className="w-4 h-4 mr-1" />
+                  Agentes IA
+                </Link>
                 <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Vender
                 </a>
