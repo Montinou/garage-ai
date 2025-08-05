@@ -21,6 +21,13 @@ interface BatchSchedulerParams {
 }
 
 export async function GET(request: Request) {
+  // Check authorization for cron jobs
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.warn('❌ Unauthorized cron request');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const startTime = Date.now();
   const { searchParams } = new URL(request.url);
   
@@ -85,6 +92,82 @@ export async function GET(request: Request) {
       console.log(`   ⏰ Hours since last: ${Math.round(dealership.hoursSinceLastExploration)}`);
 
       try {
+        console.log(`🚀 Executing exploration and extraction for ${dealership.name}...`);
+        
+        // Step 1: Explore the website to find vehicle URLs
+        const exploreResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/ai/explore`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: explorationUrl })
+        });
+        
+        if (!exploreResponse.ok) {
+          throw new Error(`Exploration failed: ${exploreResponse.statusText}`);
+        }
+        
+        const exploreResult = await exploreResponse.json();
+        const vehicleUrls = exploreResult.vehicleUrls || [];
+        
+        console.log(`🔍 Found ${vehicleUrls.length} vehicle URLs for ${dealership.name}`);
+        
+        let extractedCount = 0;
+        let savedCount = 0;
+        
+        // Step 2: Extract and save each vehicle
+        for (const vehicleUrl of vehicleUrls.slice(0, 10)) { // Limit to 10 per batch
+          try {
+            // Fetch vehicle page content
+            let vehicleContent = '';
+            try {
+              const contentResponse = await fetch(vehicleUrl.url, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+              });
+              vehicleContent = await contentResponse.text();
+            } catch (fetchError) {
+              console.warn(`Failed to fetch content from ${vehicleUrl.url}`);
+              continue;
+            }
+
+            const extractResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/ai/extract`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                url: vehicleUrl.url,
+                content: vehicleContent 
+              })
+            });
+            
+            if (extractResponse.ok) {
+              const extractResult = await extractResponse.json();
+              extractedCount++;
+              
+              // Save to database via save API
+              const saveResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/vehicles/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  vehicleData: extractResult,
+                  dealershipId: dealership.id,
+                  sourceUrl: vehicleUrl.url,
+                  sourcePortal: dealership.name
+                })
+              });
+              
+              if (saveResponse.ok) {
+                savedCount++;
+                console.log(`✅ Saved vehicle from ${vehicleUrl.url}`);
+              } else {
+                console.warn(`⚠️ Failed to save vehicle from ${vehicleUrl.url}`);
+              }
+            }
+          } catch (vehicleError) {
+            console.warn(`⚠️ Failed to process vehicle ${vehicleUrl.url}:`, vehicleError.message);
+          }
+        }
+        
+        // Create job record for tracking
         const job = await createAgentJob({
           agentId: 'batch-scheduler',
           agentType: 'orchestrator',
@@ -92,47 +175,36 @@ export async function GET(request: Request) {
           payload: {
             dealershipId: dealership.id,
             baseUrl: explorationUrl,
+            vehicleUrlsFound: vehicleUrls.length,
+            vehiclesExtracted: extractedCount,
+            vehiclesSaved: savedCount,
             source: `BATCH_${dealership.scraperOrder}_${dealership.name}`,
-            frequency: dealership.explorationFrequency,
-            explorationConfig: dealership.explorationConfig,
-            dealershipInfo: {
-              name: dealership.name,
-              brand: dealership.officialBrand,
-              type: dealership.dealershipType,
-              city: dealership.cityName,
-              province: dealership.provinceName,
-              region: dealership.provinceRegion,
-              scraperOrder: dealership.scraperOrder
-            },
             batchInfo: {
               scraperOrder: dealership.scraperOrder,
               currentHour,
               batchSize: dealershipsToProcess.length
-            },
-            config: {
-              saveToDatabase: true,
-              validateBeforeSaving: true,
-              retryAttempts: 2,
-              timeout: 120000 // 2 minute timeout for batch processing
             }
           },
-          priority: 'normal' // Normal priority for batch processing
+          result: {
+            success: true,
+            vehicleUrlsFound: vehicleUrls.length,
+            vehiclesExtracted: extractedCount,
+            vehiclesSaved: savedCount
+          },
+          status: 'completed',
+          priority: 'normal'
         });
 
-        console.log(`✅ Created batch job ${job.id} for ${dealership.name}`);
+        console.log(`✅ Batch processing completed for ${dealership.name}: ${savedCount}/${vehicleUrls.length} vehicles saved`);
         totalJobsCreated++;
 
         // Update the last explored timestamp
         await updateDealershipLastExplored(dealership.id);
 
-        // Record batch processing metric
-        await recordAgentMetric(
-          'batch-scheduler',
-          'orchestrator',
-          'batch_job_created',
-          1,
-          'count'
-        );
+        // Record success metrics
+        await recordAgentMetric('batch-scheduler', 'orchestrator', 'vehicles_discovered', vehicleUrls.length, 'count');
+        await recordAgentMetric('batch-scheduler', 'orchestrator', 'vehicles_extracted', extractedCount, 'count');
+        await recordAgentMetric('batch-scheduler', 'orchestrator', 'vehicles_saved', savedCount, 'count');
 
       } catch (jobError) {
         console.error(`❌ Failed to create batch job for ${dealership.name}:`, jobError);
@@ -192,7 +264,14 @@ export async function GET(request: Request) {
 }
 
 // POST endpoint to assign scraper orders
-export async function POST() {
+export async function POST(request: Request) {
+  // Check authorization for cron jobs
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.warn('❌ Unauthorized cron request');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     console.log('🔄 Assigning scraper orders to dealerships...');
     
