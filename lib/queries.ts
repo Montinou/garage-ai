@@ -47,6 +47,50 @@ export const updateAgentJob = async (id: string, updates: Partial<AgentJob>) => 
   return updatedJob;
 };
 
+export const updateJobStatus = async (
+  id: string, 
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'retrying',
+  result?: any,
+  errorMessage?: string
+) => {
+  const updates: any = {
+    status,
+    updatedAt: new Date()
+  };
+  
+  if (result) {
+    updates.result = result;
+  }
+  
+  if (errorMessage) {
+    updates.errorMessage = errorMessage;
+  }
+  
+  if (status === 'running') {
+    updates.startedAt = new Date();
+  }
+  
+  if (status === 'completed' || status === 'failed') {
+    updates.completedAt = new Date();
+  }
+  
+  const [updatedJob] = await db
+    .update(agentJobs)
+    .set(updates)
+    .where(eq(agentJobs.id, id))
+    .returning();
+  return updatedJob;
+};
+
+export const getAgentJob = async (id: string) => {
+  const [job] = await db
+    .select()
+    .from(agentJobs)
+    .where(eq(agentJobs.id, id))
+    .limit(1);
+  return job;
+};
+
 export const getPendingJobs = async (agentType?: string, limit = 10) => {
   let query = db
     .select()
