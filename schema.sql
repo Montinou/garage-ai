@@ -43,23 +43,49 @@ CREATE TABLE vehicles (
     mileage INTEGER, -- in kilometers
     engine_size DECIMAL(3,1), -- in liters (e.g., 2.0, 3.5)
     horsepower INTEGER,
+    -- Relationships
     brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL,
     model_id INTEGER REFERENCES models(id) ON DELETE SET NULL,
+    dealership_id UUID REFERENCES dealerships(id) ON DELETE SET NULL, -- NEW: Dealership relationship
+    
+    -- Vehicle details
     color VARCHAR(100),
     condition VARCHAR(50), -- New, Used, Certified Pre-owned, etc.
-    location_city VARCHAR(255),
-    location_state VARCHAR(255),
-    location_country VARCHAR(255),
     vin VARCHAR(17), -- Vehicle Identification Number
     license_plate VARCHAR(20),
+    
+    -- Location (now with references)
+    city_id INTEGER REFERENCES cities(id),
+    province_id INTEGER REFERENCES provinces(id),
+    location_city VARCHAR(255), -- Keep for backwards compatibility
+    location_state VARCHAR(255),
+    location_country VARCHAR(255) DEFAULT 'Argentina',
+    
+    -- Seller information  
     seller_name VARCHAR(255),
     seller_phone VARCHAR(20),
     seller_email VARCHAR(255),
-    listing_date TIMESTAMPTZ DEFAULT NOW(),
-    is_sold BOOLEAN DEFAULT FALSE,
-    is_featured BOOLEAN DEFAULT FALSE,
+    seller_type VARCHAR(50) DEFAULT 'dealership', -- dealership, particular, auction
+    
+    -- Source and AI information
+    source_url TEXT NOT NULL, -- URL where this vehicle was found
+    source_portal VARCHAR(100) NOT NULL, -- Which website/portal
     ai_analysis_summary TEXT,
+    
+    -- Opportunity and quality scoring
     is_opportunity_ai BOOLEAN DEFAULT FALSE,
+    opportunity_score INTEGER, -- 0-100 opportunity score
+    quality_score INTEGER, -- AI validation quality score
+    
+    -- Pricing analysis
+    market_price NUMERIC(12, 2), -- Estimated market value
+    price_variation NUMERIC(5, 2), -- % above/below market
+    
+    -- Status and availability
+    status VARCHAR(20) DEFAULT 'available', -- available, sold, reserved, inactive
+    is_featured BOOLEAN DEFAULT FALSE,
+    verified_at TIMESTAMPTZ, -- Last verification date
+    listing_date TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -80,15 +106,54 @@ CREATE TABLE images (
 -- Create indexes for better performance
 CREATE INDEX idx_vehicles_brand ON vehicles(brand_id);
 CREATE INDEX idx_vehicles_model ON vehicles(model_id);
+CREATE INDEX idx_vehicles_dealership ON vehicles(dealership_id);
 CREATE INDEX idx_vehicles_price ON vehicles(price);
 CREATE INDEX idx_vehicles_year ON vehicles(year);
 CREATE INDEX idx_vehicles_mileage ON vehicles(mileage);
 CREATE INDEX idx_vehicles_condition ON vehicles(condition);
+CREATE INDEX idx_vehicles_city ON vehicles(city_id);
+CREATE INDEX idx_vehicles_province ON vehicles(province_id);
 CREATE INDEX idx_vehicles_location_city ON vehicles(location_city);
 CREATE INDEX idx_vehicles_listing_date ON vehicles(listing_date);
-CREATE INDEX idx_vehicles_is_sold ON vehicles(is_sold);
+CREATE INDEX idx_vehicles_status ON vehicles(status);
 CREATE INDEX idx_vehicles_is_featured ON vehicles(is_featured);
-CREATE INDEX idx_vehicles_is_opportunity_ai ON vehicles(is_opportunity_ai);
+CREATE INDEX idx_vehicles_is_opportunity_ai ON vehicles(is_opportunity_ai, opportunity_score);
+CREATE INDEX idx_vehicles_source_portal ON vehicles(source_portal);
+CREATE INDEX idx_vehicles_source_url ON vehicles(source_url); -- For deduplication
+CREATE INDEX idx_vehicles_created_at ON vehicles(created_at);
+
+-- Dealership indexes
+CREATE INDEX idx_dealerships_name ON dealerships(name);
+CREATE INDEX idx_dealerships_city ON dealerships(city_id);
+CREATE INDEX idx_dealerships_province ON dealerships(province_id);
+CREATE INDEX idx_dealerships_brand ON dealerships(official_brand);
+CREATE INDEX idx_dealerships_active ON dealerships(is_active);
+CREATE INDEX idx_dealerships_exploration ON dealerships(exploration_enabled, exploration_frequency);
+CREATE INDEX idx_dealerships_scraper_order ON dealerships(scraper_order);
+CREATE INDEX idx_dealerships_last_explored ON dealerships(last_explored_at);
+
+-- Location indexes
+CREATE INDEX idx_cities_province ON cities(province_id, name);
+CREATE INDEX idx_provinces_region ON provinces(region);
+
+-- Explored URLs indexes
+CREATE INDEX idx_explored_urls_dealership ON explored_urls(dealership_id);
+CREATE INDEX idx_explored_urls_status ON explored_urls(status);
+CREATE INDEX idx_explored_urls_type ON explored_urls(url_type);
+CREATE INDEX idx_explored_urls_active ON explored_urls(is_active);
+CREATE INDEX idx_explored_urls_last_processed ON explored_urls(last_processed_at);
+CREATE INDEX idx_explored_urls_has_vehicle_data ON explored_urls(has_vehicle_data);
+CREATE INDEX idx_explored_urls_agent ON explored_urls(discovered_by_agent);
+CREATE INDEX idx_explored_urls_created ON explored_urls(created_at);
+
+-- Vehicle images indexes
+CREATE INDEX idx_vehicle_images_vehicle ON vehicle_images(vehicle_id);
+CREATE INDEX idx_vehicle_images_primary ON vehicle_images(is_primary);
+CREATE INDEX idx_vehicle_images_type ON vehicle_images(image_type);
+CREATE INDEX idx_vehicle_images_status ON vehicle_images(upload_status);
+CREATE INDEX idx_vehicle_images_gcs_path ON vehicle_images(gcs_path);
+
+-- Original indexes
 CREATE INDEX idx_images_vehicle ON images(vehicle_id);
 CREATE INDEX idx_images_order ON images(image_order);
 CREATE INDEX idx_models_brand ON models(brand_id);
@@ -99,6 +164,11 @@ ALTER TABLE brands ENABLE ROW LEVEL SECURITY;
 ALTER TABLE models ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE provinces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dealerships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE explored_urls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vehicle_images ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies
 
@@ -142,7 +212,233 @@ CREATE POLICY "Authenticated users can insert images" ON images
 CREATE POLICY "Authenticated users can update images" ON images
     FOR UPDATE USING (auth.role() = 'authenticated');
 
+-- provinces policies  
+CREATE POLICY "Public read access for provinces" ON provinces
+    FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage provinces" ON provinces
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- cities policies
+CREATE POLICY "Public read access for cities" ON cities
+    FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage cities" ON cities
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- dealerships policies
+CREATE POLICY "Public read access for dealerships" ON dealerships
+    FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage dealerships" ON dealerships
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can update dealerships" ON dealerships
+    FOR UPDATE USING (auth.role() = 'authenticated');
+
+-- explored_urls policies
+CREATE POLICY "Service role can manage explored URLs" ON explored_urls
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can read explored URLs" ON explored_urls
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+-- vehicle_images policies
+CREATE POLICY "Public read access for vehicle images" ON vehicle_images
+    FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage vehicle images" ON vehicle_images
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Authenticated users can insert vehicle images" ON vehicle_images
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Dealership/Location Tables for Argentina
+-- Argentina provinces table
+CREATE TABLE provinces (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    code VARCHAR(10) UNIQUE NOT NULL, -- ARG_BA, ARG_COR, etc.
+    country VARCHAR(100) NOT NULL DEFAULT 'Argentina',
+    region VARCHAR(100), -- NOA, NEA, Centro, Patagonia, Cuyo  
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Argentina cities table
+CREATE TABLE cities (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    province_id INTEGER NOT NULL REFERENCES provinces(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Dealerships table with exploration configuration
+CREATE TABLE dealerships (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    slug VARCHAR(250) UNIQUE NOT NULL, -- URL-friendly identifier
+    
+    -- URLs and contact info
+    website_url TEXT,
+    base_url TEXT, -- Base URL for exploration
+    used_vehicles_url TEXT, -- Specific used cars URL
+    phone VARCHAR(50),
+    email VARCHAR(200),
+    whatsapp VARCHAR(50),
+    
+    -- Location
+    city_id INTEGER REFERENCES cities(id),
+    province_id INTEGER REFERENCES provinces(id),
+    address TEXT,
+    coordinates JSONB, -- {lat: -34.6037, lng: -58.3816}
+    
+    -- Business info
+    official_brand VARCHAR(100), -- Toyota, Ford, etc.
+    dealership_type VARCHAR(50) DEFAULT 'multimarca', -- official, multimarca
+    business_hours JSONB, -- Schedule information
+    
+    -- Exploration configuration
+    exploration_enabled BOOLEAN DEFAULT TRUE,
+    exploration_config JSONB, -- AI exploration settings
+    exploration_frequency VARCHAR(20) DEFAULT 'daily', -- hourly, daily, weekly
+    scraper_order INTEGER, -- Order for batch processing (1-24 for hourly batches)
+    
+    -- Social media and ratings
+    social_media JSONB, -- Facebook, Instagram, etc.
+    rating NUMERIC(3,2), -- 4.5
+    review_count INTEGER DEFAULT 0,
+    
+    -- Status and metadata
+    is_active BOOLEAN DEFAULT TRUE,
+    is_verified BOOLEAN DEFAULT FALSE,
+    last_explored_at TIMESTAMPTZ,
+    metadata JSONB, -- Additional flexible data
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Explored URLs tracking table - tracks URLs discovered and processed by agents
+CREATE TABLE explored_urls (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    url TEXT NOT NULL UNIQUE,
+    dealership_id UUID REFERENCES dealerships(id) ON DELETE CASCADE,
+    url_type VARCHAR(50) NOT NULL, -- 'vehicle_listing', 'pagination', 'category', etc.
+    
+    -- Discovery info
+    discovered_by_agent VARCHAR(100), -- Which agent found this URL
+    parent_url TEXT, -- URL that led to this discovery
+    discovery_method VARCHAR(50), -- 'html_parsing', 'sitemap', 'api', etc.
+    
+    -- Processing status  
+    status VARCHAR(50) NOT NULL DEFAULT 'discovered', -- discovered, processing, processed, failed, deprecated
+    last_processed_at TIMESTAMPTZ,
+    processing_attempts INTEGER DEFAULT 0,
+    
+    -- Content analysis
+    content_type VARCHAR(100), -- detected content type
+    has_vehicle_data BOOLEAN DEFAULT FALSE,
+    vehicle_count INTEGER DEFAULT 0, -- how many vehicles found on this URL
+    
+    -- Success tracking
+    vehicles_extracted INTEGER DEFAULT 0, -- successful extractions
+    last_successful_extraction TIMESTAMPTZ,
+    
+    -- Error tracking
+    last_error TEXT,
+    consecutive_failures INTEGER DEFAULT 0,
+    
+    -- Lifecycle management
+    is_active BOOLEAN DEFAULT TRUE,
+    deprecated_at TIMESTAMPTZ, -- when URL became invalid/outdated
+    expires_at TIMESTAMPTZ, -- when to stop trying this URL
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Vehicle images with Google Cloud Storage support
+CREATE TABLE vehicle_images (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    
+    -- Original image info
+    original_url TEXT, -- Original URL from source
+    source_filename VARCHAR(300),
+    
+    -- Google Cloud Storage info
+    gcs_url TEXT NOT NULL, -- Full GCS URL
+    gcs_bucket VARCHAR(100) NOT NULL DEFAULT 'garage-ai-images',
+    gcs_path TEXT NOT NULL, -- Full path in bucket
+    gcs_filename VARCHAR(300) NOT NULL,
+    
+    -- Image metadata
+    image_order INTEGER DEFAULT 0,
+    image_type VARCHAR(50) DEFAULT 'exterior', -- exterior, interior, engine, etc.
+    is_primary BOOLEAN DEFAULT FALSE,
+    
+    -- File properties
+    file_size INTEGER, -- bytes
+    mime_type VARCHAR(100),
+    width INTEGER,
+    height INTEGER,
+    
+    -- Processing status
+    upload_status VARCHAR(20) DEFAULT 'pending', -- pending, uploaded, failed
+    processed_at TIMESTAMPTZ,
+    
+    -- Search and categorization
+    tags JSONB, -- ["front-view", "interior", "dashboard"]
+    ai_analysis JSONB, -- AI-generated image analysis
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Insert sample data
+
+-- Sample Argentine provinces
+INSERT INTO provinces (name, code, region) VALUES
+    ('Buenos Aires', 'ARG_BA', 'Centro'),
+    ('Córdoba', 'ARG_COR', 'Centro'),
+    ('Santa Fe', 'ARG_SF', 'Centro'),
+    ('Mendoza', 'ARG_MZ', 'Cuyo'),
+    ('Tucumán', 'ARG_TUC', 'NOA'),
+    ('Entre Ríos', 'ARG_ER', 'Centro'),
+    ('Salta', 'ARG_SAL', 'NOA'),
+    ('Misiones', 'ARG_MIS', 'NEA'),
+    ('Chaco', 'ARG_CHA', 'NEA'),
+    ('San Juan', 'ARG_SJ', 'Cuyo'),
+    ('Jujuy', 'ARG_JUJ', 'NOA'),
+    ('Río Negro', 'ARG_RN', 'Patagonia'),
+    ('Neuquén', 'ARG_NEU', 'Patagonia'),
+    ('Formosa', 'ARG_FOR', 'NEA'),
+    ('Chubut', 'ARG_CHU', 'Patagonia'),
+    ('San Luis', 'ARG_SL', 'Cuyo'),
+    ('Santiago del Estero', 'ARG_SE', 'NOA'),
+    ('Corrientes', 'ARG_COR_CORR', 'NEA'),
+    ('Santa Cruz', 'ARG_SC', 'Patagonia'),
+    ('La Rioja', 'ARG_LR', 'NOA'),
+    ('Catamarca', 'ARG_CAT', 'NOA'),
+    ('La Pampa', 'ARG_LP', 'Patagonia'),
+    ('Tierra del Fuego', 'ARG_TDF', 'Patagonia'),
+    ('Ciudad Autónoma de Buenos Aires', 'ARG_CABA', 'Centro');
+
+-- Sample cities for major provinces
+INSERT INTO cities (name, province_id) VALUES
+    -- Buenos Aires
+    ('Buenos Aires', 1), ('La Plata', 1), ('Mar del Plata', 1), ('Bahía Blanca', 1),
+    ('Tandil', 1), ('Olavarría', 1), ('Pergamino', 1), ('San Nicolás', 1),
+    -- Córdoba  
+    ('Córdoba', 2), ('Villa Carlos Paz', 2), ('Río Cuarto', 2), ('San Francisco', 2),
+    -- Santa Fe
+    ('Santa Fe', 3), ('Rosario', 3), ('Rafaela', 3), ('Venado Tuerto', 3),
+    -- Mendoza
+    ('Mendoza', 4), ('San Rafael', 4), ('Godoy Cruz', 4), ('Maipú', 4),
+    -- CABA
+    ('Ciudad Autónoma de Buenos Aires', 24);
 
 -- Sample brands
 INSERT INTO brands (name, country, founded_year) VALUES
@@ -580,5 +876,86 @@ BEGIN
         COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_jobs,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_jobs
     FROM agent_jobs;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get dealership exploration stats
+CREATE OR REPLACE FUNCTION get_dealership_exploration_stats(dealership_uuid UUID)
+RETURNS TABLE (
+    total_urls_discovered BIGINT,
+    active_urls BIGINT,
+    processed_urls BIGINT,
+    vehicles_found BIGINT,
+    last_exploration TIMESTAMPTZ,
+    exploration_success_rate NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*) as total_urls_discovered,
+        COUNT(CASE WHEN is_active = true THEN 1 END) as active_urls,
+        COUNT(CASE WHEN status = 'processed' THEN 1 END) as processed_urls,
+        COALESCE(SUM(vehicles_extracted), 0) as vehicles_found,
+        MAX(last_processed_at) as last_exploration,
+        CASE 
+            WHEN COUNT(*) = 0 THEN 0
+            ELSE ROUND(COUNT(CASE WHEN status = 'processed' THEN 1 END)::NUMERIC / COUNT(*)::NUMERIC, 4)
+        END as exploration_success_rate
+    FROM explored_urls
+    WHERE dealership_id = dealership_uuid;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to cleanup deprecated URLs
+CREATE OR REPLACE FUNCTION cleanup_deprecated_urls()
+RETURNS INTEGER AS $$
+DECLARE
+    cleaned_count INTEGER;
+BEGIN
+    -- Mark URLs as deprecated if they have too many consecutive failures
+    UPDATE explored_urls 
+    SET is_active = FALSE, deprecated_at = NOW()
+    WHERE consecutive_failures >= 5 
+    AND is_active = TRUE
+    AND deprecated_at IS NULL;
+
+    -- Remove very old deprecated URLs
+    DELETE FROM explored_urls 
+    WHERE deprecated_at IS NOT NULL 
+    AND deprecated_at < NOW() - INTERVAL '30 days';
+    
+    GET DIAGNOSTICS cleaned_count = ROW_COUNT;
+    RETURN cleaned_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get vehicle opportunities by dealership
+CREATE OR REPLACE FUNCTION get_dealership_opportunities(dealership_uuid UUID)
+RETURNS TABLE (
+    vehicle_id UUID,
+    title TEXT,
+    price NUMERIC,
+    market_price NUMERIC,
+    opportunity_score INTEGER,
+    price_variation NUMERIC,
+    source_url TEXT,
+    created_at TIMESTAMPTZ
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        v.id,
+        v.title,
+        v.price,
+        v.market_price,
+        v.opportunity_score,
+        v.price_variation,
+        v.source_url,
+        v.created_at
+    FROM vehicles v
+    WHERE v.dealership_id = dealership_uuid
+    AND v.is_opportunity_ai = TRUE
+    AND v.status = 'available'
+    ORDER BY v.opportunity_score DESC, v.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
