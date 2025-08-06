@@ -65,6 +65,7 @@ const statusConfig = {
     color: "bg-green-500",
     textColor: "text-green-600",
     bgColor: "bg-green-50 dark:bg-green-900/20",
+    badgeVariant: "secondary" as const,
     label: "Idle"
   },
   [AgentStatus.STARTING]: {
@@ -72,6 +73,7 @@ const statusConfig = {
     color: "bg-blue-500",
     textColor: "text-blue-600",
     bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    badgeVariant: "secondary" as const,
     label: "Starting"
   },
   [AgentStatus.RUNNING]: {
@@ -79,6 +81,7 @@ const statusConfig = {
     color: "bg-green-500",
     textColor: "text-green-600",
     bgColor: "bg-green-50 dark:bg-green-900/20",
+    badgeVariant: "default" as const,
     label: "Running"
   },
   [AgentStatus.BUSY]: {
@@ -86,6 +89,7 @@ const statusConfig = {
     color: "bg-blue-500",
     textColor: "text-blue-600", 
     bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    badgeVariant: "secondary" as const,
     label: "Busy"
   },
   [AgentStatus.STOPPING]: {
@@ -93,6 +97,7 @@ const statusConfig = {
     color: "bg-orange-500",
     textColor: "text-orange-600",
     bgColor: "bg-orange-50 dark:bg-orange-900/20",
+    badgeVariant: "outline" as const,
     label: "Stopping"
   },
   [AgentStatus.STOPPED]: {
@@ -100,6 +105,7 @@ const statusConfig = {
     color: "bg-gray-500",
     textColor: "text-gray-600",
     bgColor: "bg-gray-50 dark:bg-gray-900/20",
+    badgeVariant: "outline" as const,
     label: "Stopped"
   },
   [AgentStatus.ERROR]: {
@@ -107,6 +113,7 @@ const statusConfig = {
     color: "bg-red-500",
     textColor: "text-red-600",
     bgColor: "bg-red-50 dark:bg-red-900/20", 
+    badgeVariant: "destructive" as const,
     label: "Error"
   },
   [AgentStatus.PAUSED]: {
@@ -114,6 +121,7 @@ const statusConfig = {
     color: "bg-yellow-500",
     textColor: "text-yellow-600",
     bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+    badgeVariant: "outline" as const,
     label: "Paused"
   },
   [AgentStatus.INITIALIZING]: {
@@ -121,6 +129,7 @@ const statusConfig = {
     color: "bg-yellow-500",
     textColor: "text-yellow-600",
     bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+    badgeVariant: "secondary" as const,
     label: "Initializing"
   }
 }
@@ -305,7 +314,7 @@ export default function AgentDetailPage() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant={statusInfo.bgColor} className={statusInfo.textColor}>
+            <Badge variant={statusInfo.badgeVariant} className={statusInfo.textColor}>
               <StatusIcon className="w-3 h-3 mr-1" />
               {statusInfo.label}
             </Badge>
