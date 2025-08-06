@@ -4,14 +4,14 @@
  * Uses local agents instead of external Cloud Run services
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { extractVehicleData } from '@/lib/ai-agents';
 import { logger } from '@/lib/logger';
 import { withSecurity, validateRequestBody, validators, sanitizeHtml, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 
 // Load environment variables for local development
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config({ path: '.env.local' });
+  import('dotenv').then(dotenv => dotenv.config({ path: '.env.local' }));
 }
 
 interface ExtractionRequest {
@@ -23,21 +23,6 @@ interface ExtractionRequest {
   };
 }
 
-interface VehicleData {
-  marca: string;
-  modelo: string;
-  año: number;
-  precio: number;
-  kilometraje: number;
-  vin?: string;
-  caracteristicas: string[];
-  condicion: string;
-  vendedor: string;
-  imagenes: string[];
-  descripcion: string;
-  ubicacion: string;
-  fechaPublicacion: string;
-}
 
 async function extractHandler(request: NextRequest) {
   const body = await request.json();
@@ -46,14 +31,15 @@ async function extractHandler(request: NextRequest) {
   const validation = validateRequestBody<ExtractionRequest>(body, {
     url: validators.url,
     content: validators.nonEmptyString,
-    extractionStrategy: (value) => value === undefined || (typeof value === 'object' && value !== null)
+    extractionStrategy: (value): value is { selectors?: { [key: string]: string; } | undefined; method: "dom" | "api" | "text"; } | undefined => 
+      value === undefined || (typeof value === 'object' && value !== null)
   });
   
   if (!validation.valid) {
     return createErrorResponse('Validation failed: ' + validation.errors.join(', '), 400, 'VALIDATION_ERROR');
   }
   
-  const { url, content, extractionStrategy } = validation.data;
+  const { url, content } = validation.data;
   
   // Sanitize content
   const sanitizedContent = sanitizeHtml(content);

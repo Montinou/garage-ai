@@ -41,7 +41,6 @@ export function rateLimiter(request: NextRequest, customLimit?: RateLimitConfig)
   
   const key = `${clientIp}:${pathname}`;
   const now = Date.now();
-  const windowStart = now - config.windowMs;
   
   // Clean up old entries
   for (const [storeKey, data] of rateLimitStore.entries()) {
@@ -125,11 +124,11 @@ export function validateRequestBody<T>(
   }
 
   for (const [key, validator] of Object.entries(schema)) {
-    const value = (body as any)[key];
+    const value = (body as Record<string, unknown>)[key];
     if (!validator(value)) {
       errors.push(`Invalid or missing field: ${key}`);
     } else {
-      (data as any)[key] = value;
+      (data as Record<string, unknown>)[key] = value;
     }
   }
 
@@ -143,7 +142,7 @@ export function validateRequestBody<T>(
 /**
  * Create secure API response
  */
-export function createSecureResponse(data: any, status = 200): NextResponse {
+export function createSecureResponse(data: unknown, status = 200): NextResponse {
   const response = NextResponse.json(data, { status });
   
   // Add security headers
@@ -161,11 +160,11 @@ export function createErrorResponse(
   message: string, 
   status = 500, 
   code?: string,
-  details?: any
+  details?: Record<string, unknown>
 ): NextResponse {
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  const errorResponse: any = {
+  const errorResponse: Record<string, unknown> = {
     error: message,
     timestamp: new Date().toISOString()
   };
@@ -183,7 +182,7 @@ export function createErrorResponse(
 /**
  * API route wrapper with security features
  */
-export function withSecurity<T extends any[]>(
+export function withSecurity<T extends unknown[]>(
   handler: (request: NextRequest, ...args: T) => Promise<NextResponse> | NextResponse,
   options: {
     rateLimit?: RateLimitConfig;

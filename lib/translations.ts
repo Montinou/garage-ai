@@ -545,7 +545,7 @@ export type TranslationKeys = typeof translations;
 // Helper function to get translation
 export function t(key: string): string {
   const keys = key.split('.');
-  let value: any = translations;
+  let value: unknown = translations;
   
   for (const k of keys) {
     if (value && typeof value === 'object' && k in value) {

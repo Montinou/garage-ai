@@ -3,8 +3,8 @@
  * Data processing, validation, and helper functions for vehicle operations
  */
 
-import { formatPrice, formatMileage, formatVehicleTitle, formatLocation } from './format-utils';
-import type { VehicleSearchResult, VehicleDetails } from './car-queries';
+import { formatPrice, formatMileage, formatVehicleTitle } from './format-utils';
+import type { VehicleSearchResult } from './car-queries';
 import type { VehicleFilters } from './validation-schemas';
 
 // Argentine provinces data
@@ -552,7 +552,7 @@ export function generateContactMessage(vehicle: VehicleSearchResult, inquiryType
   return message;
 }
 
-export default {
+const carUtils = {
   ARGENTINE_PROVINCES,
   FUEL_TYPES,
   TRANSMISSION_TYPES,
@@ -571,3 +571,5 @@ export default {
   getActiveFilters,
   generateContactMessage
 };
+
+export default carUtils;

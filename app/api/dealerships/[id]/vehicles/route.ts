@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
 import { getDealershipVehicles, getDealershipByIdOrSlug } from '@/lib/dealership-queries';
 import { DealershipInventoryFiltersSchema } from '@/lib/validation-schemas';
@@ -47,8 +47,8 @@ const handleGET = async (request: NextRequest, { params }: { params: Promise<{ i
       searchQuery: searchParams.get('searchQuery') || undefined,
       page: Number(searchParams.get('page')) || 1,
       limit: Math.min(Number(searchParams.get('limit')) || 20, 50), // Max 50 results per page
-      sortBy: (searchParams.get('sortBy') as any) || 'createdAt',
-      sortOrder: (searchParams.get('sortOrder') as any) || 'desc'
+      sortBy: (searchParams.get('sortBy') as string) || 'createdAt',
+      sortOrder: (searchParams.get('sortOrder') as string) || 'desc'
     };
 
     // Remove undefined values

@@ -33,7 +33,6 @@ export function DealerMap({
   height = 400
 }: DealerMapProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mapCenter] = useState({ lat: -34.6037, lng: -58.3816 }); // Buenos Aires center
 
   // Filter dealerships that have coordinates
   const dealershipsWithLocation = dealerships.filter(d => 

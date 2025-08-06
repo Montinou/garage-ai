@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
 import { getFeaturedVehicles } from '@/lib/car-queries';
 import { withSecurity, createSecureResponse, createErrorResponse } from '@/lib/api-security';

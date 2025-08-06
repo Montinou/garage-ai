@@ -11,8 +11,10 @@ import { sql } from 'drizzle-orm';
 if (typeof window === 'undefined' && !process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
   // Only load dotenv in server-side contexts and if no connection string exists
   try {
-    require('dotenv').config({ path: '.env.local' });
-  } catch (e) {
+    import('dotenv').then(dotenv => dotenv.config({ path: '.env.local' })).catch(() => {
+      // Dotenv not available or file doesn't exist - continue with system env vars
+    });
+  } catch {
     // Dotenv not available or file doesn't exist - continue with system env vars
   }
 }

@@ -4,7 +4,7 @@
  * Based on brand/model similarity and price range
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getRelatedVehicles } from '@/lib/car-queries';
 import { withSecurity, createSecureResponse, createErrorResponse, validators } from '@/lib/api-security';
 import { logger } from '@/lib/logger';

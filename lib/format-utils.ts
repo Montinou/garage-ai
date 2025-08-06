@@ -445,7 +445,7 @@ export function validateAndFormatPhone(phone: string): { isValid: boolean; forma
 /**
  * Format business hours
  */
-export function formatBusinessHours(hours: any): string {
+export function formatBusinessHours(hours: Record<string, unknown> | string): string {
   if (!hours || typeof hours !== 'object') {
     return 'Consultar horarios';
   }
@@ -495,7 +495,7 @@ export function formatCompactNumber(num: number): string {
   }
 }
 
-export default {
+const formatUtils = {
   formatPrice,
   formatPriceCompact,
   formatNumber,
@@ -522,3 +522,5 @@ export default {
   formatPriceRange,
   formatCompactNumber
 };
+
+export default formatUtils;

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
 import { searchVehicles } from '@/lib/car-queries';
 import { VehicleFiltersSchema } from '@/lib/validation-schemas';
@@ -61,7 +61,7 @@ const handleGET = async (request: NextRequest) => {
       offset: Number(searchParams.get('offset')) || 0,
       
       // Sorting
-      sortBy: (searchParams.get('sortBy') as any) || 'relevance'
+      sortBy: (searchParams.get('sortBy') as string) || 'relevance'
     };
 
     // Remove undefined values

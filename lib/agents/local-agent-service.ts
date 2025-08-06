@@ -5,13 +5,13 @@
 
 export interface AgentResponse {
   success: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export class LocalAgentService {
-  async analyzeContent(data: any): Promise<AgentResponse> {
+  async analyzeContent(_data: Record<string, unknown>): Promise<AgentResponse> {
     // Placeholder implementation
     return {
       success: true,
@@ -23,7 +23,7 @@ export class LocalAgentService {
     };
   }
 
-  async extractData(data: any): Promise<AgentResponse> {
+  async extractData(_data: Record<string, unknown>): Promise<AgentResponse> {
     // Placeholder implementation
     return {
       success: true,
@@ -34,7 +34,7 @@ export class LocalAgentService {
     };
   }
 
-  async validateData(data: any): Promise<AgentResponse> {
+  async validateData(_data: Record<string, unknown>): Promise<AgentResponse> {
     // Placeholder implementation
     return {
       success: true,

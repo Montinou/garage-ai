@@ -8,7 +8,6 @@ import {
   X, 
   Plus, 
   Check, 
-  Minus,
   Car,
   Calendar,
   Gauge,
@@ -65,7 +64,7 @@ export default function VehicleComparison() {
     } else {
       setVehicles([]);
     }
-  }, [compareList]);
+  }, [compareList, fetchVehicleData]);
 
   const fetchVehicleData = async () => {
     try {
@@ -79,11 +78,6 @@ export default function VehicleComparison() {
     }
   };
 
-  const addToCompare = (vehicleId: string) => {
-    if (compareList.length < maxCompareItems && !compareList.includes(vehicleId)) {
-      setCompareList([...compareList, vehicleId]);
-    }
-  };
 
   const removeFromCompare = (vehicleId: string) => {
     setCompareList(compareList.filter(id => id !== vehicleId));
@@ -99,14 +93,14 @@ export default function VehicleComparison() {
   }
 
   const specs = [
-    { key: 'price', label: 'Precio', icon: DollarSign, format: (v: any) => formatPrice(v.price, v.currency) },
-    { key: 'year', label: 'Año', icon: Calendar, format: (v: any) => v.year || '-' },
-    { key: 'mileage', label: 'Kilometraje', icon: Gauge, format: (v: any) => v.mileage ? `${v.mileage.toLocaleString()} km` : '-' },
-    { key: 'fuel', label: 'Combustible', icon: Fuel, format: (v: any) => v.fuel || '-' },
-    { key: 'transmission', label: 'Transmisión', icon: Cog, format: (v: any) => v.transmission || '-' },
-    { key: 'engineSize', label: 'Motor', icon: Car, format: (v: any) => v.engineSize || '-' },
-    { key: 'condition', label: 'Condición', icon: Check, format: (v: any) => v.condition || '-' },
-    { key: 'location', label: 'Ubicación', icon: MapPin, format: (v: any) => v.location || '-' },
+    { key: 'price', label: 'Precio', icon: DollarSign, format: (v: VehicleComparisonData) => formatPrice(v.price, v.currency) },
+    { key: 'year', label: 'Año', icon: Calendar, format: (v: VehicleComparisonData) => v.year || '-' },
+    { key: 'mileage', label: 'Kilometraje', icon: Gauge, format: (v: VehicleComparisonData) => v.mileage ? `${v.mileage.toLocaleString()} km` : '-' },
+    { key: 'fuel', label: 'Combustible', icon: Fuel, format: (v: VehicleComparisonData) => v.fuel || '-' },
+    { key: 'transmission', label: 'Transmisión', icon: Cog, format: (v: VehicleComparisonData) => v.transmission || '-' },
+    { key: 'engineSize', label: 'Motor', icon: Car, format: (v: VehicleComparisonData) => v.engineSize || '-' },
+    { key: 'condition', label: 'Condición', icon: Check, format: (v: VehicleComparisonData) => v.condition || '-' },
+    { key: 'location', label: 'Ubicación', icon: MapPin, format: (v: VehicleComparisonData) => v.location || '-' },
   ];
 
   return (

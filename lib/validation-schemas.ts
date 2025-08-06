@@ -486,7 +486,7 @@ export const VALIDATION_MESSAGES = {
   acceptPrivacy: 'Debe aceptar la política de privacidad'
 };
 
-export default {
+const validationSchemas = {
   VehicleFiltersSchema,
   ContactDealerSchema,
   DealershipFiltersSchema,
@@ -505,3 +505,5 @@ export default {
   VALIDATION_PATTERNS,
   VALIDATION_MESSAGES
 };
+
+export default validationSchemas;

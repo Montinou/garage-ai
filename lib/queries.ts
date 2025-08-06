@@ -4,7 +4,6 @@ import {
   agentMemory, 
   agentMetrics, 
   agentMessages, 
-  agentOrchestrations,
   vehicles,
   brands,
   models,
@@ -30,7 +29,7 @@ export const getAgentJobs = async (agentId?: string, status?: string, limit = 50
     conditions.push(eq(agentJobs.agentId, agentId));
   }
   if (status) {
-    conditions.push(eq(agentJobs.status, status as any));
+    conditions.push(eq(agentJobs.status, status as 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'retrying'));
   }
   
   const query = conditions.length > 0 
@@ -52,10 +51,10 @@ export const updateAgentJob = async (id: string, updates: Partial<AgentJob>) => 
 export const updateJobStatus = async (
   id: string, 
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'retrying',
-  result?: any,
+  result?: Record<string, unknown>,
   errorMessage?: string
 ) => {
-  const updates: any = {
+  const updates: Partial<AgentJob> & { status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'retrying' } = {
     status,
     updatedAt: new Date()
   };
@@ -97,7 +96,7 @@ export const getPendingJobs = async (agentType?: string, limit = 10) => {
   const conditions = [eq(agentJobs.status, 'pending')];
   
   if (agentType) {
-    conditions.push(eq(agentJobs.agentType, agentType as any));
+    conditions.push(eq(agentJobs.agentType, agentType as 'orchestrator' | 'explorer' | 'analyzer' | 'extractor' | 'validator'));
   }
   
   return await db
@@ -170,11 +169,11 @@ export const recordAgentMetric = async (
   metricName: string,
   value: number,
   unit?: string,
-  metadata?: any
+  metadata?: Record<string, unknown>
 ) => {
   const [metric] = await db.insert(agentMetrics).values({
     agentId,
-    agentType: agentType as any,
+    agentType: agentType as 'orchestrator' | 'explorer' | 'analyzer' | 'extractor' | 'validator',
     metricName,
     metricValue: value.toString(),
     metricUnit: unit,
@@ -235,7 +234,7 @@ export const sendAgentMessage = async (
   fromAgentId: string,
   toAgentId: string | null,
   messageType: string,
-  payload: any,
+  payload: Record<string, unknown>,
   topic?: string,
   priority: 'low' | 'normal' | 'high' | 'critical' = 'normal',
   expiresAt?: Date
@@ -317,7 +316,7 @@ export const getVehicleById = async (id: string) => {
       vehicle: vehicles,
       brand: brands,
       model: models,
-      images: sql<any[]>`COALESCE(json_agg(${images}) FILTER (WHERE ${images.id} IS NOT NULL), '[]')`
+      images: sql<Array<{ id: string; url: string; altText?: string }>>`COALESCE(json_agg(${images}) FILTER (WHERE ${images.id} IS NOT NULL), '[]')`
     })
     .from(vehicles)
     .leftJoin(brands, eq(vehicles.brandId, brands.id))

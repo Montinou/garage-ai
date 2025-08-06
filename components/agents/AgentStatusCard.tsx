@@ -45,7 +45,7 @@ interface AgentStatusCardProps {
     memoryUsage: number
     uptime: number
   }
-  config?: Record<string, any>
+  config?: Record<string, unknown>
   onStart?: () => void
   onStop?: () => void
   onPause?: () => void
@@ -130,10 +130,10 @@ export const AgentStatusCard = memo(function AgentStatusCard({
   agentType,
   status,
   lastSeen,
-  startedAt,
+  _startedAt,
   currentJob,
   metrics,
-  config,
+  _config,
   onStart,
   onStop,
   onPause,
@@ -146,11 +146,11 @@ export const AgentStatusCard = memo(function AgentStatusCard({
   const StatusIcon = statusInfo.icon
   const isActive = status === AgentStatus.IDLE || status === AgentStatus.BUSY
   
-  // Handle agent errors
-  const handleError = (error: string) => {
-    setHasError(true)
-    setErrorMessage(error)
-  }
+  // Handle agent errors (reserved for future use)
+  // const handleError = (error: string) => {
+  //   setHasError(true)
+  //   setErrorMessage(error)
+  // }
   
   // Retry mechanism
   const handleRetry = () => {

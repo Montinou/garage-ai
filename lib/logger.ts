@@ -9,7 +9,7 @@ interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   service?: string;
 }
 
@@ -17,7 +17,7 @@ class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
   private isTest = process.env.NODE_ENV === 'test';
 
-  private formatLog(level: LogLevel, message: string, metadata?: Record<string, any>, service?: string): LogEntry {
+  private formatLog(level: LogLevel, message: string, metadata?: Record<string, unknown>, service?: string): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -36,7 +36,7 @@ class Logger {
     return logLevels.indexOf(level) >= logLevels.indexOf(currentLevel);
   }
 
-  debug(message: string, metadata?: Record<string, any>, service?: string): void {
+  debug(message: string, metadata?: Record<string, unknown>, service?: string): void {
     if (this.shouldLog('debug')) {
       const logEntry = this.formatLog('debug', message, metadata, service);
       if (this.isDevelopment) {
@@ -47,7 +47,7 @@ class Logger {
     }
   }
 
-  info(message: string, metadata?: Record<string, any>, service?: string): void {
+  info(message: string, metadata?: Record<string, unknown>, service?: string): void {
     if (this.shouldLog('info')) {
       const logEntry = this.formatLog('info', message, metadata, service);
       if (this.isDevelopment) {
@@ -58,7 +58,7 @@ class Logger {
     }
   }
 
-  warn(message: string, metadata?: Record<string, any>, service?: string): void {
+  warn(message: string, metadata?: Record<string, unknown>, service?: string): void {
     if (this.shouldLog('warn')) {
       const logEntry = this.formatLog('warn', message, metadata, service);
       if (this.isDevelopment) {
@@ -69,7 +69,7 @@ class Logger {
     }
   }
 
-  error(message: string, error?: Error | any, metadata?: Record<string, any>, service?: string): void {
+  error(message: string, error?: Error | unknown, metadata?: Record<string, unknown>, service?: string): void {
     if (this.shouldLog('error')) {
       const logEntry = this.formatLog('error', message, {
         ...metadata,

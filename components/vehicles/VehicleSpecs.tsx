@@ -26,49 +26,49 @@ export default function VehicleSpecs({ vehicle }: VehicleSpecsProps) {
       icon: CalendarIcon,
       label: 'Año',
       value: vehicle.specs.year,
-      format: (value: any) => value?.toString()
+      format: (value: string | number | null | undefined) => value?.toString()
     },
     {
       icon: GaugeIcon,
       label: 'Kilometraje',
       value: vehicle.specs.mileage,
-      format: (value: any) => value ? `${value.toLocaleString()} km` : null
+      format: (value: number | null | undefined) => value ? `${value.toLocaleString()} km` : null
     },
     {
       icon: FuelIcon,
       label: 'Combustible',
       value: vehicle.specs.fuel,
-      format: (value: any) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
+      format: (value: string | null | undefined) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
     },
     {
       icon: SettingsIcon,
       label: 'Transmisión',
       value: vehicle.specs.transmission,
-      format: (value: any) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
+      format: (value: string | null | undefined) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
     },
     {
       icon: EngineIcon,
       label: 'Motor',
       value: vehicle.specs.engineSize,
-      format: (value: any) => value
+      format: (value: string | null | undefined) => value
     },
     {
       icon: ZapIcon,
       label: 'Potencia',
       value: vehicle.specs.horsepower,
-      format: (value: any) => value ? `${value} HP` : null
+      format: (value: number | null | undefined) => value ? `${value} HP` : null
     },
     {
       icon: InfoIcon,
       label: 'Estado',
       value: vehicle.specs.condition,
-      format: (value: any) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
+      format: (value: string | null | undefined) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
     },
     {
       icon: PaletteIcon,
       label: 'Color',
       value: vehicle.specs.color,
-      format: (value: any) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
+      format: (value: string | null | undefined) => value ? value.charAt(0).toUpperCase() + value.slice(1) : null
     }
   ];
 

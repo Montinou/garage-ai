@@ -1,6 +1,5 @@
-import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -17,7 +16,6 @@ import {
 import { DealerCard } from '@/components/dealerships/DealerCard';
 import { DealerFilter } from '@/components/dealerships/DealerFilter';
 import { DealerMap } from '@/components/dealerships/DealerMap';
-import VehicleGridSkeleton from '@/components/vehicles/VehicleGridSkeleton';
 import { 
   getDealerships, 
   getFeaturedDealerships,
@@ -54,38 +52,38 @@ interface DealershipDirectoryPageProps {
   searchParams: Promise<SearchParams>;
 }
 
-// Loading skeletons
-function DealershipGridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <Card key={i} className="animate-pulse">
-          <CardHeader className="pb-3">
-            <div className="flex items-start space-x-3">
-              <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-5 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
-                <div className="h-6 bg-gray-200 rounded w-20"></div>
-              </div>
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-10 bg-gray-200 rounded w-full"></div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
+// Loading skeletons (reserved for future use)
+// function DealershipGridSkeleton() {
+//   return (
+//     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+//       {Array.from({ length: 12 }).map((_, i) => (
+//         <Card key={i} className="animate-pulse">
+//           <CardHeader className="pb-3">
+//             <div className="flex items-start space-x-3">
+//               <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+//               <div className="flex-1 space-y-2">
+//                 <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+//                 <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+//               </div>
+//             </div>
+//           </CardHeader>
+//           <CardContent>
+//             <div className="space-y-3">
+//               <div className="flex gap-2">
+//                 <div className="h-6 bg-gray-200 rounded w-16"></div>
+//                 <div className="h-6 bg-gray-200 rounded w-20"></div>
+//               </div>
+//               <div className="h-4 bg-gray-200 rounded w-full"></div>
+//               <div className="h-10 bg-gray-200 rounded w-full"></div>
+//             </div>
+//           </CardContent>
+//         </Card>
+//       ))}
+//     </div>
+//   );
+// }
 
-async function DealershipContent({ searchParams }: DealershipDirectoryPageProps) {
+export default async function DealershipDirectoryPage({ searchParams }: DealershipDirectoryPageProps) {
   const params = await searchParams;
   
   // Parse search parameters
@@ -350,43 +348,5 @@ async function DealershipContent({ searchParams }: DealershipDirectoryPageProps)
         )}
       </div>
     </div>
-  );
-}
-
-export default function DealershipDirectoryPage({ searchParams }: DealershipDirectoryPageProps) {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center mb-12">
-            <div className="h-10 bg-gray-200 rounded mx-auto mb-4 w-96 animate-pulse"></div>
-            <div className="h-6 bg-gray-200 rounded mx-auto w-2/3 animate-pulse"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-1">
-              <Card className="animate-pulse">
-                <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className="h-10 bg-gray-200 rounded"></div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-3">
-              <DealershipGridSkeleton />
-            </div>
-          </div>
-        </div>
-      </div>
-    }>
-      <DealershipContent searchParams={searchParams} />
-    </Suspense>
   );
 }

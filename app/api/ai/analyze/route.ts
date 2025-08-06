@@ -4,14 +4,14 @@
  * Uses local Vertex AI agents instead of external Cloud Run services
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { localAgentService } from '@/lib/agents/local-agent-service';
 import { logger } from '@/lib/logger';
 import { withSecurity, validateRequestBody, validators, sanitizeHtml, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 
 // Load environment variables for local development
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config({ path: '.env.local' });
+  import('dotenv').then(dotenv => dotenv.config({ path: '.env.local' }));
 }
 
 interface AnalysisRequest {
@@ -21,17 +21,6 @@ interface AnalysisRequest {
   additionalContext?: string;
 }
 
-interface AnalysisResult {
-  pageStructure: {
-    dataFields: { [key: string]: string };
-    selectors: { [key: string]: string };
-    extractionMethod: 'dom' | 'api' | 'ocr';
-  };
-  challenges: string[];
-  confidence: number;
-  estimatedTime: number;
-  recommendations?: string[];
-}
 
 async function analyzeHandler(request: NextRequest) {
   const body = await request.json();
@@ -48,7 +37,7 @@ async function analyzeHandler(request: NextRequest) {
     return createErrorResponse('Validation failed: ' + validation.errors.join(', '), 400, 'VALIDATION_ERROR');
   }
   
-  const { url, htmlContent, userAgent, additionalContext } = validation.data;
+  const { url, htmlContent, additionalContext } = validation.data;
   
   // Sanitize HTML content
   const sanitizedHtml = sanitizeHtml(htmlContent);

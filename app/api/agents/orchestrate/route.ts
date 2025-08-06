@@ -17,14 +17,6 @@ interface OrchestrationRequest {
   };
 }
 
-interface AgentJob {
-  id: string;
-  agentType: 'analyzer' | 'extractor' | 'validator';
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  payload: any;
-  result?: any;
-  error?: string;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -186,7 +178,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function to execute analyzer job
-async function executeAnalyzerJob(jobId: string, payload: any) {
+async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown>) {
   try {
     await updateJobStatus(jobId, 'running', null);
     
@@ -216,7 +208,7 @@ async function executeAnalyzerJob(jobId: string, payload: any) {
 }
 
 // Helper function to execute extractor job
-async function executeExtractorJob(jobId: string, payload: any) {
+async function executeExtractorJob(jobId: string, payload: Record<string, unknown>) {
   try {
     await updateJobStatus(jobId, 'running', null);
     
@@ -246,7 +238,7 @@ async function executeExtractorJob(jobId: string, payload: any) {
 }
 
 // Helper function to execute validator job
-async function executeValidatorJob(jobId: string, payload: any) {
+async function executeValidatorJob(jobId: string, payload: Record<string, unknown>) {
   try {
     await updateJobStatus(jobId, 'running', null);
     
@@ -287,7 +279,7 @@ export async function GET(request: NextRequest) {
         jobs,
         timestamp: new Date().toISOString()
       });
-    } catch (error) {
+    } catch {
       return NextResponse.json({
         error: 'Failed to get workflow status'
       }, { status: 500 });

@@ -22,7 +22,7 @@ const SAFETY_SETTINGS = [
 /**
  * Analyzer Agent - Analyzes web content structure
  */
-export async function analyzeContent(url: string, htmlContent: string): Promise<any> {
+export async function analyzeContent(url: string, htmlContent: string): Promise<Record<string, unknown>> {
   const systemInstruction = `Eres un analizador experto de contenido web, especializado en sitios de listados de vehículos.
 
 FORMATO DE SALIDA DEL ANÁLISIS:
@@ -96,7 +96,7 @@ Por favor, analiza la estructura de la página y proporciona un análisis estruc
 /**
  * Extractor Agent - Extracts vehicle data
  */
-export async function extractVehicleData(url: string, content: string): Promise<any> {
+export async function extractVehicleData(url: string, content: string): Promise<Record<string, unknown>> {
   const systemInstruction = `Eres un especialista experto en extracción de datos para listados de vehículos en español.
 
 FORMATO DE SALIDA:
@@ -168,7 +168,7 @@ Por favor, devuelve un JSON con los datos estructurados del vehículo.`;
 /**
  * Explorer Agent - Discovers vehicle URLs intelligently
  */
-export async function exploreWebsite(baseUrl: string, htmlContent: string): Promise<any> {
+export async function exploreWebsite(baseUrl: string, htmlContent: string): Promise<Record<string, unknown>> {
   const systemInstruction = `Eres un explorador web experto. Tu misión es ANALIZAR INTELIGENTEMENTE los enlaces reales disponibles en la página, NO generar URLs aleatorias.
 
 FORMATO DE SALIDA:

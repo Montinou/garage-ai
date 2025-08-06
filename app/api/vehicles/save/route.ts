@@ -2,11 +2,11 @@
  * Vehicle Save API - Saves extracted vehicle data to Neon database
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/neon';
 import { vehicles, brands, models } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
-import { withSecurity, validateRequestBody, validators, createSecureResponse, createErrorResponse } from '@/lib/api-security';
+import { withSecurity, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 import { z } from 'zod';
 
 // Validation schema for vehicle save request
@@ -31,7 +31,6 @@ const SaveVehicleSchema = z.object({
   sourcePortal: z.string().max(100),
 });
 
-type SaveVehicleRequest = z.infer<typeof SaveVehicleSchema>;
 
 const handlePOST = async (request: NextRequest) => {
   try {
@@ -99,7 +98,7 @@ const handlePOST = async (request: NextRequest) => {
       message: 'Vehicle saved successfully'
     });
 
-  } catch (error) {
+  } catch {
     return createErrorResponse(
       'Error al guardar vehículo',
       500,

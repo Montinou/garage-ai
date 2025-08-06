@@ -189,7 +189,7 @@ export default function VehicleActions({ vehicle }: VehicleActionsProps) {
     
     try {
       window.open(`https://wa.me/${sanitizedPhone}?text=${message}`, '_blank', 'noopener,noreferrer');
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "No se pudo abrir WhatsApp",
@@ -220,7 +220,7 @@ export default function VehicleActions({ vehicle }: VehicleActionsProps) {
 
     try {
       window.location.href = `tel:${sanitizedPhone}`;
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "No se pudo realizar la llamada",

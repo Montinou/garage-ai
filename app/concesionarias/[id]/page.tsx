@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -12,19 +11,16 @@ import {
   MapPin,
   Star,
   Car,
-  Clock,
   Phone,
-  MessageCircle,
-  ExternalLink
+  MessageCircle
 } from 'lucide-react';
 import { DealerProfile } from '@/components/dealerships/DealerProfile';
-import { DealerInventory } from '@/components/dealerships/DealerInventory';
 import { VehicleCard } from '@/components/vehicles/VehicleCard';
 import { 
   getDealershipByIdOrSlug,
-  getDealershipVehicles,
   getFeaturedDealerships
 } from '@/lib/dealership-queries';
+import { getVehiclesByDealership } from '@/lib/car-queries';
 import { translations } from '@/lib/translations';
 
 interface DealershipPageProps {
@@ -61,60 +57,60 @@ export async function generateMetadata({ params }: DealershipPageProps): Promise
   };
 }
 
-// Loading component
-function DealershipSkeleton() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <div className="h-6 bg-gray-200 rounded w-64 animate-pulse"></div>
-        </div>
+// Loading component (reserved for future use)
+// function DealershipSkeleton() {
+//   return (
+//     <div className="min-h-screen bg-gray-50">
+//       <div className="max-w-7xl mx-auto px-4 py-8">
+//         {/* Breadcrumb */}
+//         <div className="mb-6">
+//           <div className="h-6 bg-gray-200 rounded w-64 animate-pulse"></div>
+//         </div>
+//
+//         {/* Header */}
+//         <Card className="mb-8 animate-pulse">
+//           <CardContent className="p-6">
+//             <div className="flex flex-col md:flex-row gap-6">
+//               <div className="flex items-start gap-4">
+//                 <div className="h-20 w-20 bg-gray-200 rounded-full"></div>
+//                 <div className="space-y-3">
+//                   <div className="h-8 bg-gray-200 rounded w-80"></div>
+//                   <div className="h-5 bg-gray-200 rounded w-48"></div>
+//                   <div className="flex gap-2">
+//                     <div className="h-6 bg-gray-200 rounded w-20"></div>
+//                     <div className="h-6 bg-gray-200 rounded w-16"></div>
+//                   </div>
+//                 </div>
+//               </div>
+//               <div className="md:ml-auto space-y-3">
+//                 <div className="h-10 bg-gray-200 rounded w-48"></div>
+//                 <div className="h-8 bg-gray-200 rounded w-32"></div>
+//               </div>
+//             </div>
+//           </CardContent>
+//         </Card>
+//
+//         {/* Content Skeleton */}
+//         <div className="space-y-8">
+//           {Array.from({ length: 3 }).map((_, i) => (
+//             <Card key={i} className="animate-pulse">
+//               <CardContent className="p-6">
+//                 <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
+//                 <div className="space-y-3">
+//                   <div className="h-4 bg-gray-200 rounded"></div>
+//                   <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+//                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+//                 </div>
+//               </CardContent>
+//             </Card>
+//           ))}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
-        {/* Header */}
-        <Card className="mb-8 animate-pulse">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex items-start gap-4">
-                <div className="h-20 w-20 bg-gray-200 rounded-full"></div>
-                <div className="space-y-3">
-                  <div className="h-8 bg-gray-200 rounded w-80"></div>
-                  <div className="h-5 bg-gray-200 rounded w-48"></div>
-                  <div className="flex gap-2">
-                    <div className="h-6 bg-gray-200 rounded w-20"></div>
-                    <div className="h-6 bg-gray-200 rounded w-16"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="md:ml-auto space-y-3">
-                <div className="h-10 bg-gray-200 rounded w-48"></div>
-                <div className="h-8 bg-gray-200 rounded w-32"></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Skeleton */}
-        <div className="space-y-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-async function DealershipContent({ params }: DealershipPageProps) {
+export default async function DealershipPage({ params }: DealershipPageProps) {
   // Fetch dealership data
   const { id } = await params;
   const dealership = await getDealershipByIdOrSlug(id);
@@ -124,12 +120,12 @@ async function DealershipContent({ params }: DealershipPageProps) {
   }
 
   // Fetch initial inventory and related dealerships
-  const [inventoryResult, relatedDealerships] = await Promise.all([
-    getDealershipVehicles(dealership.id, { limit: 6 }),
+  const [vehicles, relatedDealerships] = await Promise.all([
+    getVehiclesByDealership(dealership.id, 6),
     getFeaturedDealerships(4)
   ]);
 
-  const location = [dealership.cityName, dealership.provinceName].filter(Boolean).join(', ');
+  // const location = [dealership.cityName, dealership.provinceName].filter(Boolean).join(', '); // TODO: Use for display
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -196,7 +192,7 @@ async function DealershipContent({ params }: DealershipPageProps) {
         <DealerProfile dealership={dealership} className="mb-8" />
 
         {/* Vehicle Preview Section */}
-        {inventoryResult.vehicles.length > 0 && (
+        {vehicles.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -217,7 +213,7 @@ async function DealershipContent({ params }: DealershipPageProps) {
 
             {/* Vehicle Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {inventoryResult.vehicles.slice(0, 6).map((vehicle) => (
+              {vehicles.slice(0, 6).map((vehicle) => (
                 <VehicleCard 
                   key={vehicle.id} 
                   vehicle={vehicle}
@@ -238,7 +234,7 @@ async function DealershipContent({ params }: DealershipPageProps) {
         )}
 
         {/* No Inventory Message */}
-        {inventoryResult.vehicles.length === 0 && (
+        {vehicles.length === 0 && (
           <section className="mb-12">
             <Card>
               <CardContent className="p-12 text-center">
@@ -366,10 +362,3 @@ async function DealershipContent({ params }: DealershipPageProps) {
   );
 }
 
-export default function DealershipPage({ params }: DealershipPageProps) {
-  return (
-    <Suspense fallback={<DealershipSkeleton />}>
-      <DealershipContent params={params} />
-    </Suspense>
-  );
-}

@@ -4,7 +4,7 @@
  * Includes vehicle data, images, specs, and dealership info
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getVehicleDetails } from '@/lib/car-queries';
 import { withSecurity, createSecureResponse, createErrorResponse, validators } from '@/lib/api-security';
 import { logger } from '@/lib/logger';
@@ -21,7 +21,7 @@ async function getVehicleHandler(
     const { id } = await params;
 
     // Validate vehicle ID
-    if (!validators.uuid(id) && !validators.alphanumeric(id)) {
+    if (!validators.nonEmptyString(id)) {
       return createErrorResponse('Invalid vehicle ID format', 400, 'INVALID_ID');
     }
 

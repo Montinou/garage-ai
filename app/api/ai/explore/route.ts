@@ -4,14 +4,14 @@
  * Uses local Vertex AI agents instead of external Cloud Run services
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { exploreWebsite } from '@/lib/ai-agents';
 import { logger } from '@/lib/logger';
 import { withSecurity, validateRequestBody, validators, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 
 // Load environment variables for local development
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config({ path: '.env.local' });
+  import('dotenv').then(dotenv => dotenv.config({ path: '.env.local' }));
 }
 
 interface ExplorationRequest {
@@ -31,24 +31,6 @@ interface ExplorationRequest {
   };
 }
 
-interface ExplorationResult {
-  vehicleUrls: Array<{
-    url: string;
-    title?: string;
-    price?: string;
-    opportunityLevel: 'high' | 'medium' | 'low';
-    estimatedValue?: string;
-  }>;
-  paginationUrls: string[];
-  filterUrls: string[];
-  challengesDetected: string[];
-  explorationStats: {
-    pagesAnalyzed: number;
-    vehiclesFound: number;
-    opportunitiesFound: number;
-    processingTime: number;
-  };
-}
 
 async function exploreHandler(request: NextRequest) {
   const body = await request.json();
@@ -56,15 +38,17 @@ async function exploreHandler(request: NextRequest) {
   // Validate input
   const validation = validateRequestBody<ExplorationRequest>(body, {
     baseUrl: validators.url,
-    dealershipInfo: (value) => value === undefined || (typeof value === 'object' && value !== null),
-    explorationConfig: (value) => value === undefined || (typeof value === 'object' && value !== null)
+    dealershipInfo: (value): value is { name: string; brand?: string; type?: string; city?: string; province?: string; } | undefined => 
+      value === undefined || (typeof value === 'object' && value !== null),
+    explorationConfig: (value): value is { maxPages?: number; maxDepth?: number; includeImages?: boolean; focusOnOpportunities?: boolean; } | undefined => 
+      value === undefined || (typeof value === 'object' && value !== null)
   });
   
   if (!validation.valid) {
     return createErrorResponse('Validation failed: ' + validation.errors.join(', '), 400, 'VALIDATION_ERROR');
   }
   
-  const { baseUrl, dealershipInfo, explorationConfig } = validation.data;
+  const { baseUrl } = validation.data;
     
     logger.info('Starting website exploration', { baseUrl }, 'ai-explorer');
     
@@ -77,7 +61,7 @@ async function exploreHandler(request: NextRequest) {
         }
       });
       htmlContent = await response.text();
-    } catch (fetchError) {
+    } catch {
       logger.warn('Failed to fetch content from URL', { baseUrl }, 'ai-explorer');
     }
     

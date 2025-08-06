@@ -5,7 +5,7 @@
 
 import { db } from './neon';
 import { dealerships, cities, provinces, vehicles } from './schema';
-import { eq, and, or, isNotNull, lt, sql, desc, asc, count, avg, ilike } from 'drizzle-orm';
+import { eq, and, or, isNotNull, sql, desc, asc, count, avg, ilike } from 'drizzle-orm';
 
 export interface DealershipForExploration {
   id: string;
@@ -14,7 +14,7 @@ export interface DealershipForExploration {
   baseUrl: string | null;
   usedVehiclesUrl: string | null;
   websiteUrl: string | null;
-  explorationConfig: any;
+  explorationConfig: Record<string, unknown>;
   explorationFrequency: string | null;
   scraperOrder: number | null;
   lastExploredAt: Date | null;
@@ -40,11 +40,11 @@ export interface PublicDealership {
   email: string | null;
   whatsapp: string | null;
   address: string | null;
-  coordinates: any;
+  coordinates: Record<string, unknown>;
   officialBrand: string | null;
   dealershipType: string | null;
-  businessHours: any;
-  socialMedia: any;
+  businessHours: Record<string, unknown>;
+  socialMedia: Record<string, unknown>;
   rating: number | null;
   reviewCount: number;
   isVerified: boolean;
@@ -560,7 +560,7 @@ export async function getDealershipDirectoryStats() {
           WHERE d.is_active = true AND v.status = 'available'
         )`,
         avgRating: avg(dealerships.rating),
-        topProvinces: sql<any>`(
+        topProvinces: sql<Array<{ name: string; count: number }>>`(
           SELECT json_agg(json_build_object(
             'name', p.name,
             'count', province_counts.dealership_count

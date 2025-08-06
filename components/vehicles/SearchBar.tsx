@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { Search, X, Clock, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { translations } from '@/lib/translations';
 // Custom debounce hook
-function useDebounce(callback: (...args: any[]) => void, delay: number) {
+function useDebounce<T extends unknown[]>(callback: (...args: T) => void, delay: number) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  return useCallback((...args: any[]) => {
+  return useCallback((...args: T) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -63,7 +63,7 @@ export default function SearchBar({
       if (saved) {
         setRecentSearches(JSON.parse(saved));
       }
-    } catch (error) {
+    } catch {
       // Silently handle localStorage errors in production
     }
   }, []);
@@ -77,7 +77,7 @@ export default function SearchBar({
       const updated = [trimmedQuery, ...recentSearches.filter(s => s !== trimmedQuery)].slice(0, 5);
       setRecentSearches(updated);
       localStorage.setItem('garageai_recent_searches', JSON.stringify(updated));
-    } catch (error) {
+    } catch {
       // Silently handle localStorage errors in production
     }
   }, [recentSearches]);
@@ -127,7 +127,7 @@ export default function SearchBar({
       );
 
       setSuggestions(filtered);
-    } catch (error) {
+    } catch {
       // Silently handle suggestion fetch errors
       setSuggestions([]);
     } finally {

@@ -1,18 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { 
   Car, 
   Search, 
   Filter,
-  SortAsc,
   Grid,
   List,
   ChevronLeft,
@@ -24,7 +21,6 @@ import { VehicleGridSkeleton } from '@/components/vehicles/VehicleGridSkeleton';
 import { Vehicle } from '@/lib/schema';
 import { PublicDealership } from '@/lib/dealership-queries';
 import { DealershipInventoryFilters } from '@/lib/validation-schemas';
-import { translations } from '@/lib/translations';
 import { cn } from '@/lib/utils';
 
 interface DealerInventoryProps {

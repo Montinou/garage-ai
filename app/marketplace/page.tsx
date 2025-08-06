@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { searchVehicles, getFilterOptions } from '@/lib/car-queries';
+import { searchVehicles, getFilterOptions, getMarketplaceStats } from '@/lib/car-queries';
 import { parseSearchParams, searchParamsToFilters } from '@/lib/validation-schemas';
 import { translations } from '@/lib/translations';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
@@ -43,7 +43,7 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
   const filters = searchParamsToFilters(parsedParams);
   
   // Fetch initial data and filter options in parallel
-  const [initialResults, filterOptions] = await Promise.all([
+  const [initialResults, filterOptions, marketplaceStats] = await Promise.all([
     searchVehicles(filters).catch(() => ({ vehicles: [], total: 0, hasMore: false })),
     getFilterOptions().catch(() => ({
       brands: [],
@@ -52,7 +52,8 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
       yearRange: { min: 1950, max: new Date().getFullYear() },
       fuelTypes: [],
       transmissionTypes: []
-    }))
+    })),
+    getMarketplaceStats().catch(() => null)
   ]);
 
   return (
@@ -90,16 +91,9 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
             </div>
             
             {/* Quick Stats */}
-            <Suspense fallback={
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-32 bg-muted animate-pulse rounded-lg" />
-                <div className="h-16 w-32 bg-muted animate-pulse rounded-lg" />
-              </div>
-            }>
-              <WidgetErrorBoundary>
-                <MarketplaceStats />
-              </WidgetErrorBoundary>
-            </Suspense>
+            <WidgetErrorBoundary>
+              <MarketplaceStats stats={marketplaceStats || undefined} />
+            </WidgetErrorBoundary>
           </div>
         </div>
 

@@ -10,8 +10,7 @@ import {
   getCurrentHourDealerships,
   getDealershipsByScraperOrder,
   getBestExplorationUrl,
-  updateDealershipLastExplored,
-  getDealershipStats
+  updateDealershipLastExplored
 } from '@/lib/dealership-queries';
 
 interface BatchSchedulerParams {
@@ -43,7 +42,7 @@ export async function GET(request: Request) {
     const currentHour = new Date().getHours() + 1; // 1-24
 
     // Get dealership statistics for monitoring
-    const stats = await getDealershipStats();
+    // const stats = await getDealershipStats(); // TODO: Use for monitoring dashboard
 
     // Determine which dealerships to process
     let dealershipsToProcess;
@@ -111,7 +110,7 @@ export async function GET(request: Request) {
                 }
               });
               vehicleContent = await contentResponse.text();
-            } catch (fetchError) {
+            } catch {
               continue;
             }
 
@@ -145,12 +144,12 @@ export async function GET(request: Request) {
               } else {
               }
             }
-          } catch (vehicleError) {
+          } catch {
           }
         }
         
         // Create job record for tracking
-        const job = await createAgentJob({
+        await createAgentJob({
           agentId: 'batch-scheduler',
           agentType: 'orchestrator',
           jobType: 'exploration_process',
@@ -187,7 +186,7 @@ export async function GET(request: Request) {
         await recordAgentMetric('batch-scheduler', 'orchestrator', 'vehicles_extracted', extractedCount, 'count');
         await recordAgentMetric('batch-scheduler', 'orchestrator', 'vehicles_saved', savedCount, 'count');
 
-      } catch (jobError) {
+      } catch {
         await recordAgentMetric(
           'batch-scheduler',
           'orchestrator',
@@ -229,7 +228,7 @@ export async function GET(request: Request) {
 
     try {
       await recordAgentMetric('batch-scheduler', 'orchestrator', 'batch_scheduler_error', 1, 'count');
-    } catch (metricError) {
+    } catch {
     }
 
     return NextResponse.json({

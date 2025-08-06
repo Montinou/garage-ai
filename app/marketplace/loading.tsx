@@ -1,6 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 import VehicleGridSkeleton from '@/components/vehicles/VehicleGridSkeleton';
 import FilterPanelSkeleton from '@/components/vehicles/FilterPanelSkeleton';
 

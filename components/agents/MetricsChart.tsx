@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -34,14 +33,12 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  Download,
-  Calendar,
   BarChart3,
   PieChart as PieChartIcon,
   LineChart as LineChartIcon
 } from "lucide-react"
 import { AgentType, JobStatus } from "@/agents/types/AgentTypes"
-import { format, subHours, subDays, subWeeks } from "date-fns"
+import { format, subHours, subDays } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 
 interface MetricsChartProps {
@@ -76,37 +73,33 @@ interface SystemMetricsData {
   cpuUsage: number
 }
 
-const CHART_COLORS = [
-  "#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8",
-  "#82CA9D", "#FFC658", "#FF7C7C", "#8DD1E1", "#D084D0"
-]
 
 // Memoized chart components to prevent unnecessary re-renders
-const MemoizedLineChart = memo(({ data, children, ...props }: any) => (
+const MemoizedLineChart = memo(({ data, children, ...props }: { data: MetricData[], children: React.ReactNode } & Record<string, unknown>) => (
   <LineChart data={data} {...props}>
     {children}
   </LineChart>
 ))
 
-const MemoizedAreaChart = memo(({ data, children, ...props }: any) => (
+const MemoizedAreaChart = memo(({ data, children, ...props }: { data: MetricData[], children: React.ReactNode } & Record<string, unknown>) => (
   <AreaChart data={data} {...props}>
     {children}
   </AreaChart>
 ))
 
-const MemoizedBarChart = memo(({ data, children, ...props }: any) => (
+const MemoizedBarChart = memo(({ data, children, ...props }: { data: MetricData[], children: React.ReactNode } & Record<string, unknown>) => (
   <BarChart data={data} {...props}>
     {children}
   </BarChart>
 ))
 
-const MemoizedPieChart = memo(({ children, ...props }: any) => (
+const MemoizedPieChart = memo(({ children, ...props }: { children: React.ReactNode } & Record<string, unknown>) => (
   <PieChart {...props}>
     {children}
   </PieChart>
 ))
 
-const MemoizedScatterChart = memo(({ data, children, ...props }: any) => (
+const MemoizedScatterChart = memo(({ data, children, ...props }: { data: MetricData[], children: React.ReactNode } & Record<string, unknown>) => (
   <ScatterChart data={data} {...props}>
     {children}
   </ScatterChart>
@@ -329,7 +322,7 @@ export const MetricsChart = memo(function MetricsChart({ className }: MetricsCha
           <p className="text-muted-foreground">Visualize system and agent performance</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as any)}>
+          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as "1h" | "24h" | "7d" | "30d")}>
             <SelectTrigger className="w-[100px]">
               <SelectValue />
             </SelectTrigger>
@@ -340,7 +333,7 @@ export const MetricsChart = memo(function MetricsChart({ className }: MetricsCha
               <SelectItem value="30d">30 Days</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={refreshInterval} onValueChange={(value) => setRefreshInterval(value as any)}>
+          <Select value={refreshInterval} onValueChange={(value) => setRefreshInterval(value as "5s" | "30s" | "1m" | "5m")}>
             <SelectTrigger className="w-[100px]">
               <SelectValue />
             </SelectTrigger>
@@ -707,7 +700,7 @@ export const MetricsChart = memo(function MetricsChart({ className }: MetricsCha
                 <CardTitle>Job Status Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {jobStatusData.map((item, index) => {
+                {jobStatusData.map((item) => {
                   const total = jobStatusData.reduce((sum, item) => sum + item.value, 0)
                   const percentage = (item.value / total) * 100
                   

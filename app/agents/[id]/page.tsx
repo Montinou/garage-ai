@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -24,7 +23,7 @@ import {
   Eye
 } from "lucide-react"
 import { AgentStatus, AgentType, JobStatus } from "@/agents/types/AgentTypes"
-import { formatDistanceToNow, format } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { MetricsChart } from "@/components/agents/MetricsChart"
 
@@ -35,7 +34,7 @@ interface AgentDetailData {
   lastSeen: Date
   startedAt: Date
   uptime: number
-  config: Record<string, any>
+  config: Record<string, unknown>
   metrics?: {
     totalJobs: number
     successfulJobs: number
@@ -54,8 +53,8 @@ interface AgentDetailData {
     started_at?: Date
     completed_at?: Date
     error_message?: string
-    payload?: any
-    result?: any
+    payload?: Record<string, unknown>
+    result?: Record<string, unknown>
   }>
 }
 
@@ -152,7 +151,7 @@ export default function AgentDetailPage() {
   const { toast } = useToast()
 
   // Fetch agent details
-  const fetchAgentDetails = async () => {
+  const fetchAgentDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/agents/status?agentId=${agentId}`)
       const data = await response.json()
@@ -172,7 +171,7 @@ export default function AgentDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [agentId, toast])
 
   useEffect(() => {
     if (agentId) {
@@ -180,7 +179,7 @@ export default function AgentDetailPage() {
       const interval = setInterval(fetchAgentDetails, 10000) // Refresh every 10 seconds
       return () => clearInterval(interval)
     }
-  }, [agentId])
+  }, [agentId, fetchAgentDetails])
 
   // Mock data for demonstration
   useEffect(() => {
@@ -252,7 +251,7 @@ export default function AgentDetailPage() {
     return `${mb.toFixed(1)} MB`
   }
 
-  const calculateDuration = (job: any) => {
+  const calculateDuration = (job: AgentDetailData['recentJobs'][0]) => {
     if (job.completed_at && job.started_at) {
       const duration = new Date(job.completed_at).getTime() - new Date(job.started_at).getTime()
       return `${Math.round(duration / 1000)}s`
@@ -283,7 +282,7 @@ export default function AgentDetailPage() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-2">Agent Not Found</h2>
-              <p className="text-muted-foreground mb-4">The agent with ID "{agentId}" could not be found.</p>
+              <p className="text-muted-foreground mb-4">The agent with ID &quot;{agentId}&quot; could not be found.</p>
               <Button onClick={() => router.push('/agents')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Agents

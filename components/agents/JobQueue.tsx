@@ -14,8 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { 
-  Play,
-  Pause,
   Square,
   RotateCcw,
   Trash2,
@@ -24,10 +22,8 @@ import {
   XCircle,
   AlertCircle,
   Search,
-  Filter,
   Plus,
   Eye,
-  Calendar,
   Timer,
   Activity,
   RefreshCw
@@ -44,8 +40,8 @@ interface Job {
   job_type: string
   status: JobStatus
   priority: JobPriority
-  payload: any
-  result?: any
+  payload: Record<string, unknown>
+  result?: Record<string, unknown>
   error_message?: string
   retry_count: number
   max_retries: number
@@ -56,7 +52,7 @@ interface Job {
   expires_at?: Date
   created_at: Date
   updated_at: Date
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 interface JobQueueProps {
@@ -221,7 +217,7 @@ export const JobQueue = memo(function JobQueue({ className }: JobQueueProps) {
           job_type: "scrape_marketplace",
           status: JobStatus.RUNNING,
           priority: JobPriority.HIGH,
-          payload: { url: "https://example.com", filters: {} },
+          payload: { url: "https://example.com", filters: {} } as Record<string, unknown>,
           retry_count: 0,
           max_retries: 3,
           created_at: new Date(Date.now() - 300000),
@@ -235,8 +231,8 @@ export const JobQueue = memo(function JobQueue({ className }: JobQueueProps) {
           job_type: "analyze_listings",
           status: JobStatus.COMPLETED,
           priority: JobPriority.NORMAL,
-          payload: { data: [] },
-          result: { processed: 150, errors: 2 },
+          payload: { data: [] } as Record<string, unknown>,
+          result: { processed: 150, errors: 2 } as Record<string, unknown>,
           retry_count: 0,
           max_retries: 3,
           created_at: new Date(Date.now() - 600000),
@@ -264,7 +260,7 @@ export const JobQueue = memo(function JobQueue({ className }: JobQueueProps) {
     fetchJobs()
     const interval = setInterval(fetchJobs, 5000) // Refresh every 5 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchJobs])
 
   // Job control handlers
   const handleCancelJob = async (jobId: string) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Star, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Star, RotateCcw, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { formatPrice, formatNumber } from '@/lib/format-utils';
+import { formatPrice } from '@/lib/format-utils';
 import { translations } from '@/lib/translations';
 import type { FilterOptions } from '@/lib/car-queries';
 import type { VehicleFilters } from '@/lib/validation-schemas';
@@ -30,7 +30,6 @@ export default function FilterPanel({
   options,
   initialFilters,
   onFiltersChange,
-  isMobile = false,
   className
 }: FilterPanelProps) {
   // Local state for filters
@@ -110,7 +109,7 @@ export default function FilterPanel({
     id, 
     title, 
     children, 
-    defaultOpen = false 
+ 
   }: { 
     id: keyof typeof openSections; 
     title: string; 

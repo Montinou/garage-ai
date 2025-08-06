@@ -17,19 +17,14 @@ import { Progress } from "@/components/ui/progress"
 import { 
   Database,
   Search,
-  Filter,
   Trash2,
   Eye,
   RefreshCw,
-  Download,
-  Upload,
   Tag,
-  Clock,
   FileText,
   Hash,
   List,
   Globe,
-  Calendar,
   TrendingUp,
   Activity,
   HardDrive
@@ -88,7 +83,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
       return matchesSearch && matchesType && matchesTag
     })
     .sort((a, b) => {
-      let aValue: any, bValue: any
+      let aValue: unknown, bValue: unknown
       
       switch (sortBy) {
         case "key":
@@ -212,7 +207,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
     fetchMemoryData()
     const interval = setInterval(fetchMemoryData, 30000) // Refresh every 30 seconds
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchMemoryData])
 
   // Memory management handlers
   const handleDeleteEntry = async (key: string) => {
@@ -223,7 +218,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
         title: "Success",
         description: `Memory entry "${key}" deleted successfully`
       })
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: `Failed to delete memory entry "${key}"`,
@@ -245,7 +240,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
         description: `${expiredCount} expired entries cleared`
       })
       fetchMemoryData()
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to clear expired entries",
@@ -261,11 +256,11 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
   }
 
-  const getValueSize = (value: any) => {
+  const getValueSize = (value: unknown) => {
     return JSON.stringify(value).length
   }
 
-  const formatValue = (value: any, type: string) => {
+  const formatValue = (value: unknown, type: string) => {
     if (type === "string") return value
     if (type === "array") return `Array(${value.length})`
     if (type === "object") return `Object(${Object.keys(value).length} keys)`

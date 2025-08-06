@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +33,6 @@ export default function VehicleGrid({
   filterOptions
 }: VehicleGridProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   // State management
   const [vehicles, setVehicles] = useState(initialData.vehicles);
@@ -46,8 +45,6 @@ export default function VehicleGrid({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
-  // Calculate current page and results info
-  const currentPage = Math.floor((vehicles.length / (currentFilters.limit || 20))) + 1;
   const showingFrom = vehicles.length > 0 ? 1 : 0;
   const showingTo = vehicles.length;
 
@@ -120,7 +117,7 @@ export default function VehicleGrid({
     }
     
     return active;
-  }, [currentFilters, filterOptions]);
+  }, [currentFilters, filterOptions, updateFilters]);
 
   // Update filters and search
   const updateFilters = useCallback(async (newFilters: Partial<VehicleFilters>) => {

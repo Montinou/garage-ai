@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -18,7 +17,6 @@ import {
   Car,
   Star,
   Shield,
-  Calendar,
   Globe,
   Share2,
   ChevronRight
@@ -64,7 +62,7 @@ export function DealerProfile({ dealership, className }: DealerProfileProps) {
     return translations.dealership.types[type as keyof typeof translations.dealership.types] || type;
   };
 
-  const formatBusinessHours = (hours: any) => {
+  const formatBusinessHours = (hours: Record<string, unknown>) => {
     if (!hours || typeof hours !== 'object') {
       return 'Horarios no especificados';
     }

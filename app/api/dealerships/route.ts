@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
 import { 
   getDealerships, 
@@ -29,8 +29,8 @@ const handleGET = async (request: NextRequest) => {
       hasVehicles: searchParams.get('hasVehicles') ? searchParams.get('hasVehicles') === 'true' : undefined,
       page: Number(searchParams.get('page')) || 1,
       limit: Math.min(Number(searchParams.get('limit')) || 20, 50), // Max 50 results per page
-      sortBy: (searchParams.get('sortBy') as any) || 'name',
-      sortOrder: (searchParams.get('sortOrder') as any) || 'asc'
+      sortBy: (searchParams.get('sortBy') as string) || 'name',
+      sortOrder: (searchParams.get('sortOrder') as string) || 'asc'
     };
 
     // Remove undefined values

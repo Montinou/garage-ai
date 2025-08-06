@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -6,12 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, Building } from 'lucide-react';
 import { DealerInventory } from '@/components/dealerships/DealerInventory';
-import { VehicleGridSkeleton } from '@/components/vehicles/VehicleGridSkeleton';
 import { 
   getDealershipByIdOrSlug,
   getDealershipVehicles
 } from '@/lib/dealership-queries';
-import { translations } from '@/lib/translations';
 
 interface DealershipInventoryPageProps {
   params: Promise<{
@@ -43,30 +40,30 @@ export async function generateMetadata({ params }: DealershipInventoryPageProps)
   };
 }
 
-// Loading component
-function InventorySkeleton() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <div className="h-6 bg-gray-200 rounded w-96 animate-pulse"></div>
-        </div>
+// Loading component (reserved for future use)
+// function InventorySkeleton() {
+//   return (
+//     <div className="min-h-screen bg-gray-50">
+//       <div className="max-w-7xl mx-auto px-4 py-8">
+//         {/* Breadcrumb */}
+//         <div className="mb-6">
+//           <div className="h-6 bg-gray-200 rounded w-96 animate-pulse"></div>
+//         </div>
+//
+//         {/* Header */}
+//         <div className="mb-8">
+//           <div className="h-8 bg-gray-200 rounded w-80 mb-2 animate-pulse"></div>
+//           <div className="h-5 bg-gray-200 rounded w-48 animate-pulse"></div>
+//         </div>
+//
+//         {/* Inventory Skeleton */}
+//         <VehicleGridSkeleton count={12} />
+//       </div>
+//     </div>
+//   );
+// }
 
-        {/* Header */}
-        <div className="mb-8">
-          <div className="h-8 bg-gray-200 rounded w-80 mb-2 animate-pulse"></div>
-          <div className="h-5 bg-gray-200 rounded w-48 animate-pulse"></div>
-        </div>
-
-        {/* Inventory Skeleton */}
-        <VehicleGridSkeleton count={12} />
-      </div>
-    </div>
-  );
-}
-
-async function InventoryContent({ params }: DealershipInventoryPageProps) {
+export default async function DealershipInventoryPage({ params }: DealershipInventoryPageProps) {
   // Fetch dealership data
   const { id } = await params;
   const dealership = await getDealershipByIdOrSlug(id);
@@ -197,13 +194,5 @@ async function InventoryContent({ params }: DealershipInventoryPageProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function DealershipInventoryPage({ params }: DealershipInventoryPageProps) {
-  return (
-    <Suspense fallback={<InventorySkeleton />}>
-      <InventoryContent params={params} />
-    </Suspense>
   );
 }

@@ -13,12 +13,7 @@ import {
   dealerships, 
   cities, 
   provinces,
-  type Vehicle,
-  type Brand,
-  type Model,
-  type Dealership,
-  type Image,
-  type VehicleImage
+  type Vehicle
 } from './schema';
 import { 
   eq, 
@@ -26,19 +21,12 @@ import {
   asc,
   and, 
   or,
-  like,
   ilike,
   isNotNull,
-  isNull,
   gte,
   lte,
-  between,
   sql, 
-  count, 
-  avg, 
-  max, 
-  min,
-  inArray
+  count
 } from 'drizzle-orm';
 import type { VehicleFilters } from './validation-schemas';
 
@@ -384,7 +372,17 @@ export async function getVehicleDetails(id: string): Promise<VehicleDetails | nu
         // Dealership info
         dealership: dealerships.name,
         dealershipSlug: dealerships.slug,
-        dealershipInfo: sql<any>`
+        dealershipInfo: sql<{
+          id: string;
+          name: string;
+          phone?: string;
+          whatsapp?: string;
+          email?: string;
+          address?: string;
+          officialBrand?: string;
+          dealershipType?: string;
+          rating?: number;
+        }>`
           CASE 
             WHEN ${dealerships.id} IS NOT NULL THEN
               json_build_object(
@@ -549,7 +547,7 @@ export async function getFilterOptions(): Promise<FilterOptions> {
           id: sql<string>`${provinces.id}::text`,
           name: provinces.name,
           region: provinces.region,
-          cities: sql<any>`
+          cities: sql<Array<{ id: string; name: string }>>`
             COALESCE(
               json_agg(
                 json_build_object(
@@ -832,7 +830,7 @@ export async function getMarketplaceStats() {
   }
 }
 
-export default {
+const carQueries = {
   searchVehicles,
   getVehicleDetails,
   getFeaturedVehicles,
@@ -841,3 +839,5 @@ export default {
   getVehiclesByDealership,
   getMarketplaceStats
 };
+
+export default carQueries;

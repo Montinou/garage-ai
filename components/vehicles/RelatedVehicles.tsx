@@ -30,7 +30,7 @@ interface RelatedVehiclesProps {
   currentVehicleId: string;
 }
 
-export default function RelatedVehicles({ relatedVehicles, currentVehicleId }: RelatedVehiclesProps) {
+export default function RelatedVehicles({ relatedVehicles }: RelatedVehiclesProps) {
   if (!relatedVehicles || relatedVehicles.length === 0) {
     return null;
   }

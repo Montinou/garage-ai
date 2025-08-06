@@ -174,7 +174,7 @@ export default function SocialShare({ vehicle }: SocialShareProps) {
           
           try {
             window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-          } catch (error) {
+          } catch {
             toast({
               title: "Error de email",
               description: "No se pudo abrir el cliente de email",

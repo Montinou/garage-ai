@@ -1,22 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback, memo, Suspense, lazy } from "react"
+import React, { useState, useEffect, useMemo, useCallback, memo, Suspense, lazy } from "react"
 import { useRealTimeAgents } from "@/hooks/use-real-time-agents"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Database,
-  Filter,
   RefreshCw,
   Search,
   Server,
@@ -24,7 +19,7 @@ import {
   Users,
   Zap
 } from "lucide-react"
-import { AccessibilityWrapper, StatusIndicator, SkipLink, ResponsiveTable } from "./AccessibilityWrapper"
+import { AccessibilityWrapper, SkipLink } from "./AccessibilityWrapper"
 import { AgentStatusCard } from "./AgentStatusCard"
 // Lazy load heavy components for better performance
 const JobQueue = lazy(() => import("./JobQueue").then(module => ({ default: module.JobQueue })))
@@ -45,7 +40,7 @@ interface AgentData {
   lastSeen: Date
   startedAt?: Date
   uptime: number
-  config: Record<string, any>
+  config: Record<string, unknown>
   metrics?: {
     totalJobs: number
     successfulJobs: number
@@ -110,7 +105,7 @@ const MetricsCard = memo(({ title, value, description, icon: Icon }: {
   title: string
   value: string | number
   description?: string
-  icon: any
+  icon: React.ComponentType<{className?: string}>
 }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -242,7 +237,7 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
       } else {
         throw new Error('Failed to start agent')
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: `Failed to start agent ${agentId}`,
@@ -271,7 +266,7 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
       } else {
         throw new Error('Failed to stop agent')
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: `Failed to stop agent ${agentId}`,

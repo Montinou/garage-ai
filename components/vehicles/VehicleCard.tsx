@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatPrice, formatMileage, formatLocation, formatRelativeTime } from '@/lib/format-utils';
+import { formatPrice, formatMileage, formatRelativeTime } from '@/lib/format-utils';
 import { translations } from '@/lib/translations';
 import type { VehicleSearchResult } from '@/lib/car-queries';
 

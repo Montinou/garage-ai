@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
 import { getDealershipByIdOrSlug } from '@/lib/dealership-queries';
 import { withSecurity, createSecureResponse, createErrorResponse } from '@/lib/api-security';

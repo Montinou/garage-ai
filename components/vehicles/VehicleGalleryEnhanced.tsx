@@ -12,7 +12,8 @@ import {
   ZoomIn, 
   ZoomOut,
   Download,
-  Share2
+  Share2,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
@@ -161,7 +162,7 @@ export default function VehicleGalleryEnhanced({ images, vehicleTitle }: Vehicle
         title: "Imagen descargada",
         description: "La imagen se ha descargado correctamente",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error al descargar",
         description: "No se pudo descargar la imagen",
@@ -180,7 +181,7 @@ export default function VehicleGalleryEnhanced({ images, vehicleTitle }: Vehicle
           text: `Imagen de ${vehicleTitle}`,
           url: imageUrl,
         });
-      } catch (error) {
+      } catch {
         console.log('Share cancelled');
       }
     } else {
