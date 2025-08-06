@@ -40,8 +40,8 @@ async function analyzeHandler(request: NextRequest) {
   const validation = validateRequestBody<AnalysisRequest>(body, {
     url: validators.url,
     htmlContent: validators.nonEmptyString,
-    userAgent: (value) => value === undefined || validators.safeString(value),
-    additionalContext: (value) => value === undefined || validators.safeString(value)
+    userAgent: (value): value is string | undefined => value === undefined || validators.safeString(value),
+    additionalContext: (value): value is string | undefined => value === undefined || validators.safeString(value)
   });
   
   if (!validation.valid) {
