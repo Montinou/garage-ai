@@ -28,14 +28,15 @@ import {
 import { translations } from '@/lib/translations';
 
 interface DealershipPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: DealershipPageProps): Promise<Metadata> {
-  const dealership = await getDealershipByIdOrSlug(params.id);
+  const { id } = await params;
+  const dealership = await getDealershipByIdOrSlug(id);
   
   if (!dealership) {
     return {
@@ -115,7 +116,8 @@ function DealershipSkeleton() {
 
 async function DealershipContent({ params }: DealershipPageProps) {
   // Fetch dealership data
-  const dealership = await getDealershipByIdOrSlug(params.id);
+  const { id } = await params;
+  const dealership = await getDealershipByIdOrSlug(id);
   
   if (!dealership) {
     notFound();

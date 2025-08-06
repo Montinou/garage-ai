@@ -14,14 +14,15 @@ import {
 import { translations } from '@/lib/translations';
 
 interface DealershipInventoryPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: DealershipInventoryPageProps): Promise<Metadata> {
-  const dealership = await getDealershipByIdOrSlug(params.id);
+  const { id } = await params;
+  const dealership = await getDealershipByIdOrSlug(id);
   
   if (!dealership) {
     return {
@@ -67,7 +68,8 @@ function InventorySkeleton() {
 
 async function InventoryContent({ params }: DealershipInventoryPageProps) {
   // Fetch dealership data
-  const dealership = await getDealershipByIdOrSlug(params.id);
+  const { id } = await params;
+  const dealership = await getDealershipByIdOrSlug(id);
   
   if (!dealership) {
     notFound();
