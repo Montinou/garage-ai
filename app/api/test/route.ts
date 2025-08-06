@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🧪 Starting complete system test...');
     const startTime = Date.now();
     
     // Test data - Spanish vehicle listing content
@@ -37,7 +36,6 @@ export async function POST(request: NextRequest) {
     `;
 
     // Step 1: Test Analyzer
-    console.log('📊 Testing analyzer...');
     const analyzeResponse = await fetch(`${request.nextUrl.origin}/api/ai/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,10 +52,8 @@ export async function POST(request: NextRequest) {
     }
 
     const analysisResult = await analyzeResponse.json();
-    console.log('✅ Analyzer completed:', analysisResult.analysis?.confidence);
 
     // Step 2: Test Extractor
-    console.log('🔍 Testing extractor...');
     const extractResponse = await fetch(`${request.nextUrl.origin}/api/ai/extract`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,10 +72,8 @@ export async function POST(request: NextRequest) {
     }
 
     const extractionResult = await extractResponse.json();
-    console.log('✅ Extractor completed:', extractionResult.vehicleData?.marca, extractionResult.vehicleData?.modelo);
 
     // Step 3: Test Validator
-    console.log('🔎 Testing validator...');
     const validateResponse = await fetch(`${request.nextUrl.origin}/api/ai/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -98,7 +92,6 @@ export async function POST(request: NextRequest) {
     }
 
     const validationResult = await validateResponse.json();
-    console.log('✅ Validator completed:', validationResult.validation?.puntuacionCalidad);
 
     const totalTime = Date.now() - startTime;
 
@@ -153,7 +146,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('❌ System test failed:', error);
+    // Error logged to response for debugging
     return NextResponse.json(
       {
         success: false,

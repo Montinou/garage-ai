@@ -1,0 +1,1 @@
+- Always respect '/mnt/e/Projects/scrappers/garage-ai/.clinerules'

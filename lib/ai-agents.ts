@@ -3,7 +3,7 @@
  * Clean, focused implementation using the original agent configurations
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
 // Initialize Vertex AI
 const ai = new GoogleGenAI({
@@ -13,10 +13,10 @@ const ai = new GoogleGenAI({
 });
 
 const SAFETY_SETTINGS = [
-  { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
-  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' },
-  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'OFF' },
-  { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' }
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE }
 ];
 
 /**

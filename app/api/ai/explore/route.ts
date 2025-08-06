@@ -6,6 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { exploreWebsite } from '@/lib/ai-agents';
+import { logger } from '@/lib/logger';
+import { withSecurity, validateRequestBody, validators, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 
 // Load environment variables for local development
 if (process.env.NODE_ENV !== 'production') {
@@ -48,19 +50,23 @@ interface ExplorationResult {
   };
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body: ExplorationRequest = await request.json();
-    const { baseUrl, dealershipInfo, explorationConfig } = body;
+async function exploreHandler(request: NextRequest) {
+  const body = await request.json();
+  
+  // Validate input
+  const validation = validateRequestBody<ExplorationRequest>(body, {
+    baseUrl: validators.url,
+    dealershipInfo: (value) => value === undefined || (typeof value === 'object' && value !== null),
+    explorationConfig: (value) => value === undefined || (typeof value === 'object' && value !== null)
+  });
+  
+  if (!validation.valid) {
+    return createErrorResponse('Validation failed: ' + validation.errors.join(', '), 400, 'VALIDATION_ERROR');
+  }
+  
+  const { baseUrl, dealershipInfo, explorationConfig } = validation.data;
     
-    if (!baseUrl) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required field: baseUrl' },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`🔍 Exploring website: ${baseUrl}`);
+    logger.info('Starting website exploration', { baseUrl }, 'ai-explorer');
     
     // Fetch HTML content
     let htmlContent = '';
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
       });
       htmlContent = await response.text();
     } catch (fetchError) {
-      console.warn('Failed to fetch content from URL');
+      logger.warn('Failed to fetch content from URL', { baseUrl }, 'ai-explorer');
     }
     
     // Use direct AI agent
@@ -80,9 +86,9 @@ export async function POST(request: NextRequest) {
     const exploration = await exploreWebsite(baseUrl, htmlContent);
     const processingTime = Date.now() - startTime;
 
-    console.log(`✅ Exploration completed in ${processingTime}ms`);
+    logger.info('Exploration completed successfully', { processingTime, baseUrl, vehiclesFound: exploration.vehicleUrls?.length || 0 }, 'ai-explorer');
 
-    return NextResponse.json({
+    return createSecureResponse({
       success: true,  
       vehicleUrls: exploration.vehicleUrls || [],
       paginationUrls: exploration.paginationUrls || [],
@@ -97,25 +103,17 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
     
-  } catch (error) {
-    console.error('❌ Exploration failed:', error);
-    return NextResponse.json(
-      {
-        error: 'Exploration failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
-  }
 }
 
+export const POST = withSecurity(exploreHandler, {
+  rateLimit: { requests: 6, windowMs: 60000 } // 6 requests per minute for exploration
+});
+
 export async function GET() {
-  return NextResponse.json({
+  return createSecureResponse({
     service: 'AI Explorer (Local Vertex AI Agent)',
     status: 'healthy',
     type: 'local-agent',
-    vertexProject: 'analog-medium-451706-m7',
     timestamp: new Date().toISOString()
   });
 }

@@ -4,11 +4,11 @@ export async function GET(request: Request) {
   // Check authorization for cron jobs
   const authHeader = request.headers.get('Authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.warn('❌ Unauthorized cron request');
+    // Unauthorized cron request blocked
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  console.log('⚡ Cron job executed successfully');
+  // Cron job executed successfully
   
   return NextResponse.json({ 
     ok: true,

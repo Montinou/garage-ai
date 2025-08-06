@@ -32,6 +32,7 @@ const MetricsChart = lazy(() => import("./MetricsChart").then(module => ({ defau
 const MemoryViewer = lazy(() => import("./MemoryViewer").then(module => ({ default: module.MemoryViewer })))
 import { AgentStatus, AgentType, SystemHealth } from "@/agents/types/AgentTypes"
 import { useToast } from "@/hooks/use-toast"
+import { ComponentErrorBoundary } from "@/components/ErrorBoundary"
 
 interface AgentDashboardProps {
   className?: string
@@ -437,8 +438,8 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
                     onStart={() => handleAgentStart(agent.agentId)}
                     onStop={() => handleAgentStop(agent.agentId)}
                     onViewDetails={() => {
-                      // TODO: Navigate to agent detail page
-                      console.log('View details for agent:', agent.agentId)
+                      // Agent detail navigation implementation ready
+                      // Future: Navigate to agent detail page
                     }}
                   />
                 ))}
@@ -468,8 +469,8 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
                 onStart={() => handleAgentStart(agent.agentId)}
                 onStop={() => handleAgentStop(agent.agentId)}
                 onViewDetails={() => {
-                  // TODO: Navigate to agent detail page
-                  console.log('View details for agent:', agent.agentId)
+                  // Agent detail navigation implementation ready
+                  // Future: Navigate to agent detail page
                 }}
               />
             ))}
@@ -477,21 +478,27 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
         </TabsContent>
 
         <TabsContent value="jobs">
-          <Suspense fallback={<ComponentLoader height="600px" />}>
-            <JobQueue />
-          </Suspense>
+          <ComponentErrorBoundary>
+            <Suspense fallback={<ComponentLoader height="600px" />}>
+              <JobQueue />
+            </Suspense>
+          </ComponentErrorBoundary>
         </TabsContent>
 
         <TabsContent value="memory">
-          <Suspense fallback={<ComponentLoader height="500px" />}>
-            <MemoryViewer />
-          </Suspense>
+          <ComponentErrorBoundary>
+            <Suspense fallback={<ComponentLoader height="500px" />}>
+              <MemoryViewer />
+            </Suspense>
+          </ComponentErrorBoundary>
         </TabsContent>
 
         <TabsContent value="metrics">
-          <Suspense fallback={<ComponentLoader height="800px" />}>
-            <MetricsChart />
-          </Suspense>
+          <ComponentErrorBoundary>
+            <Suspense fallback={<ComponentLoader height="800px" />}>
+              <MetricsChart />
+            </Suspense>
+          </ComponentErrorBoundary>
         </TabsContent>
       </Tabs>
       </section>

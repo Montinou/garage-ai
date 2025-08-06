@@ -24,7 +24,6 @@ export async function GET(request: Request) {
   // Check authorization for cron jobs
   const authHeader = request.headers.get('Authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.warn('❌ Unauthorized cron request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -39,15 +38,12 @@ export async function GET(request: Request) {
   };
   
   try {
-    console.log('⚡ Batch Scheduler - Starting batch processing');
-    console.log(`🔧 Parameters: order=${params.scraperOrder || 'current-hour'}, limit=${params.limit}`);
 
     let totalJobsCreated = 0;
     const currentHour = new Date().getHours() + 1; // 1-24
 
     // Get dealership statistics for monitoring
     const stats = await getDealershipStats();
-    console.log('📊 Dealership Statistics:', stats);
 
     // Determine which dealerships to process
     let dealershipsToProcess;
@@ -55,17 +51,13 @@ export async function GET(request: Request) {
     if (params.scraperOrder) {
       // Process specific scraper order
       dealershipsToProcess = await getDealershipsByScraperOrder(params.scraperOrder, params.limit);
-      console.log(`🔢 Processing scraper order ${params.scraperOrder}`);
     } else {
       // Process current hour's dealerships
       dealershipsToProcess = await getCurrentHourDealerships(params.limit);
-      console.log(`🕐 Processing current hour batch (${currentHour})`);
     }
     
-    console.log(`📍 Found ${dealershipsToProcess.length} dealerships to process in this batch`);
 
     if (dealershipsToProcess.length === 0) {
-      console.log('ℹ️  No dealerships found for this batch');
       return NextResponse.json({
         success: true,
         message: 'No dealerships found for this batch',
@@ -83,16 +75,11 @@ export async function GET(request: Request) {
       const explorationUrl = getBestExplorationUrl(dealership);
       
       if (!explorationUrl) {
-        console.log(`⚠️  No exploration URL available for ${dealership.name}`);
         continue;
       }
 
-      console.log(`🏢 Batch processing: ${dealership.name} (Order: ${dealership.scraperOrder})`);
-      console.log(`   📍 ${dealership.cityName}, ${dealership.provinceName}`);
-      console.log(`   ⏰ Hours since last: ${Math.round(dealership.hoursSinceLastExploration)}`);
 
       try {
-        console.log(`🚀 Executing exploration and extraction for ${dealership.name}...`);
         
         // Step 1: Explore the website to find vehicle URLs
         const exploreResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/ai/explore`, {
@@ -108,7 +95,6 @@ export async function GET(request: Request) {
         const exploreResult = await exploreResponse.json();
         const vehicleUrls = exploreResult.vehicleUrls || [];
         
-        console.log(`🔍 Found ${vehicleUrls.length} vehicle URLs for ${dealership.name}`);
         
         let extractedCount = 0;
         let savedCount = 0;
@@ -126,7 +112,6 @@ export async function GET(request: Request) {
               });
               vehicleContent = await contentResponse.text();
             } catch (fetchError) {
-              console.warn(`Failed to fetch content from ${vehicleUrl.url}`);
               continue;
             }
 
@@ -157,13 +142,10 @@ export async function GET(request: Request) {
               
               if (saveResponse.ok) {
                 savedCount++;
-                console.log(`✅ Saved vehicle from ${vehicleUrl.url}`);
               } else {
-                console.warn(`⚠️ Failed to save vehicle from ${vehicleUrl.url}`);
               }
             }
           } catch (vehicleError) {
-            console.warn(`⚠️ Failed to process vehicle ${vehicleUrl.url}:`, vehicleError.message);
           }
         }
         
@@ -195,7 +177,6 @@ export async function GET(request: Request) {
           priority: 'normal'
         });
 
-        console.log(`✅ Batch processing completed for ${dealership.name}: ${savedCount}/${vehicleUrls.length} vehicles saved`);
         totalJobsCreated++;
 
         // Update the last explored timestamp
@@ -207,7 +188,6 @@ export async function GET(request: Request) {
         await recordAgentMetric('batch-scheduler', 'orchestrator', 'vehicles_saved', savedCount, 'count');
 
       } catch (jobError) {
-        console.error(`❌ Failed to create batch job for ${dealership.name}:`, jobError);
         await recordAgentMetric(
           'batch-scheduler',
           'orchestrator',
@@ -225,7 +205,6 @@ export async function GET(request: Request) {
     await recordAgentMetric('batch-scheduler', 'orchestrator', 'batch_processing_time', processingTime, 'ms');
     await recordAgentMetric('batch-scheduler', 'orchestrator', 'batch_size', dealershipsToProcess.length, 'count');
 
-    console.log(`🎉 Batch Scheduler completed: ${totalJobsCreated} jobs created in ${processingTime}ms`);
 
     return NextResponse.json({
       success: true,
@@ -247,12 +226,10 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('💥 Batch Scheduler failed:', error);
 
     try {
       await recordAgentMetric('batch-scheduler', 'orchestrator', 'batch_scheduler_error', 1, 'count');
     } catch (metricError) {
-      console.error('Failed to record error metric:', metricError);
     }
 
     return NextResponse.json({
@@ -268,12 +245,10 @@ export async function POST(request: Request) {
   // Check authorization for cron jobs
   const authHeader = request.headers.get('Authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.warn('❌ Unauthorized cron request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    console.log('🔄 Assigning scraper orders to dealerships...');
     
     const { assignScraperOrders } = await import('@/lib/dealership-queries');
     await assignScraperOrders();
@@ -285,7 +260,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('❌ Failed to assign scraper orders:', error);
     
     return NextResponse.json({
       success: false,

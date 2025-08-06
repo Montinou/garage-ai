@@ -6,34 +6,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/neon';
 import { vehicles, brands, models } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
+import { withSecurity, validateRequestBody, validators, createSecureResponse, createErrorResponse } from '@/lib/api-security';
+import { z } from 'zod';
 
-interface SaveVehicleRequest {
-  vehicleData: {
-    marca: string;
-    modelo: string;
-    año: number;
-    precio: number;
-    kilometraje: number;
-    vin?: string;
-    condicion: string;
-    caracteristicas: string[];
-    vendedor: string;
-    imagenes: string[];
-    descripcion: string;
-    ubicacion: string;
-    fechaPublicacion?: string;
-  };
-  dealershipId: string;
-  sourceUrl: string;
-  sourcePortal: string;
-}
+// Validation schema for vehicle save request
+const SaveVehicleSchema = z.object({
+  vehicleData: z.object({
+    marca: z.string().min(1).max(50),
+    modelo: z.string().min(1).max(100),
+    año: z.number().int().min(1950).max(new Date().getFullYear() + 1),
+    precio: z.number().positive().max(10000000),
+    kilometraje: z.number().int().min(0).max(1000000),
+    vin: z.string().max(17).optional(),
+    condicion: z.string().max(20),
+    caracteristicas: z.array(z.string().max(100)),
+    vendedor: z.string().max(100),
+    imagenes: z.array(z.string().url()),
+    descripcion: z.string().max(5000),
+    ubicacion: z.string().max(100),
+    fechaPublicacion: z.string().optional(),
+  }),
+  dealershipId: z.string().uuid(),
+  sourceUrl: z.string().url(),
+  sourcePortal: z.string().max(100),
+});
 
-export async function POST(request: NextRequest) {
+type SaveVehicleRequest = z.infer<typeof SaveVehicleSchema>;
+
+const handlePOST = async (request: NextRequest) => {
   try {
-    const body: SaveVehicleRequest = await request.json();
-    const { vehicleData, dealershipId, sourceUrl, sourcePortal } = body;
+    const body = await request.json();
+    
+    // Validate request body
+    const validation = SaveVehicleSchema.safeParse(body);
+    if (!validation.success) {
+      return createErrorResponse(
+        'Datos de vehículo inválidos',
+        400,
+        'VALIDATION_ERROR',
+        validation.error.errors
+      );
+    }
+    
+    const { vehicleData, dealershipId, sourceUrl, sourcePortal } = validation.data;
 
-    console.log(`💾 Saving vehicle: ${vehicleData.marca} ${vehicleData.modelo} ${vehicleData.año}`);
 
     // Find or create brand
     let brand = await db.select().from(brands).where(eq(brands.name, vehicleData.marca)).limit(1);
@@ -63,7 +79,7 @@ export async function POST(request: NextRequest) {
       brandId: brand[0].id,
       modelId: model[0].id,
       dealershipId,
-      color: null, // TODO: Extract from caracteristicas
+      color: null, // Color extraction from characteristics pending implementation
       condition: vehicleData.condicion,
       vin: vehicleData.vin,
       locationCity: vehicleData.ubicacion,
@@ -73,23 +89,26 @@ export async function POST(request: NextRequest) {
       sourceUrl,
       sourcePortal,
       status: 'available',
-      // TODO: Process images and save to vehicleImages table
+      // Image processing and vehicleImages table integration pending implementation
     }).returning();
 
-    console.log(`✅ Vehicle saved with ID: ${savedVehicle.id}`);
 
-    return NextResponse.json({
+    return createSecureResponse({
       success: true,
       vehicleId: savedVehicle.id,
       message: 'Vehicle saved successfully'
     });
 
   } catch (error) {
-    console.error('❌ Error saving vehicle:', error);
-    
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to save vehicle'
-    }, { status: 500 });
+    return createErrorResponse(
+      'Error al guardar vehículo',
+      500,
+      'VEHICLE_SAVE_ERROR'
+    );
   }
 }
+
+// Apply security wrapper with rate limiting
+export const POST = withSecurity(handlePOST, {
+  rateLimit: { requests: 20, windowMs: 60000 } // 20 vehicle saves per minute
+});

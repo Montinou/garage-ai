@@ -6,6 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { extractVehicleData } from '@/lib/ai-agents';
+import { logger } from '@/lib/logger';
+import { withSecurity, validateRequestBody, validators, sanitizeHtml, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 
 // Load environment variables for local development
 if (process.env.NODE_ENV !== 'production') {
@@ -37,28 +39,35 @@ interface VehicleData {
   fechaPublicacion: string;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body: ExtractionRequest = await request.json();
-    const { url, content, extractionStrategy } = body;
+async function extractHandler(request: NextRequest) {
+  const body = await request.json();
+  
+  // Validate input
+  const validation = validateRequestBody<ExtractionRequest>(body, {
+    url: validators.url,
+    content: validators.nonEmptyString,
+    extractionStrategy: (value) => value === undefined || (typeof value === 'object' && value !== null)
+  });
+  
+  if (!validation.valid) {
+    return createErrorResponse('Validation failed: ' + validation.errors.join(', '), 400, 'VALIDATION_ERROR');
+  }
+  
+  const { url, content, extractionStrategy } = validation.data;
+  
+  // Sanitize content
+  const sanitizedContent = sanitizeHtml(content);
     
-    if (!url || !content) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: url and content' },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`🔍 Extracting data with local agent: ${url}`);
+    logger.info('Starting vehicle data extraction', { url, contentLength: content.length }, 'ai-extractor');
     
     // Use direct AI agent
     const startTime = Date.now();
-    const vehicleData = await extractVehicleData(url, content);
+    const vehicleData = await extractVehicleData(url, sanitizedContent);
     const processingTime = Date.now() - startTime;
 
-    console.log(`✅ Extraction completed in ${processingTime}ms`);
+    logger.info('Extraction completed successfully', { processingTime, url }, 'ai-extractor');
 
-    return NextResponse.json({
+    return createSecureResponse({
       success: true,
       vehicleData,
       processingTime,
@@ -66,25 +75,17 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
     
-  } catch (error) {
-    console.error('❌ Extraction failed:', error);
-    return NextResponse.json(
-      {
-        error: 'Extraction failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
-  }
 }
 
+export const POST = withSecurity(extractHandler, {
+  rateLimit: { requests: 8, windowMs: 60000 } // 8 requests per minute for extraction
+});
+
 export async function GET() {
-  return NextResponse.json({
+  return createSecureResponse({
     service: 'AI Extractor (Local Vertex AI Agent)',
     status: 'healthy',
     type: 'local-agent',
-    vertexProject: 'analog-medium-451706-m7',
     timestamp: new Date().toISOString()
   });
 }

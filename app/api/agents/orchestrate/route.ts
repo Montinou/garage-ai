@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🎯 Starting orchestration for: ${target}`);
-    console.log(`📋 Extraction type: ${extractionType}`);
 
     // Create the orchestration workflow
     const workflowId = `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -60,7 +58,6 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    console.log(`📊 Created analyzer job: ${analyzerJob.id}`);
 
     // Immediately start the analyzer job
     const analyzerResult = await executeAnalyzerJob(analyzerJob.id, {
@@ -95,7 +92,6 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    console.log(`🔍 Created extractor job: ${extractorJob.id}`);
 
     // Execute extraction based on analysis
     const extractorResult = await executeExtractorJob(extractorJob.id, {
@@ -135,7 +131,6 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      console.log(`✅ Created validator job: ${validatorJob.id}`);
 
       validatorResult = await executeValidatorJob(validatorJob.id, {
         vehicleData: extractorResult.vehicleData,
@@ -148,7 +143,6 @@ export async function POST(request: NextRequest) {
 
       if (!validatorResult.success) {
         await updateJobStatus(validatorJob.id, 'failed', { error: validatorResult.error });
-        console.warn(`⚠️ Validation failed but continuing: ${validatorResult.error}`);
       }
     }
 
@@ -178,13 +172,10 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     };
 
-    console.log(`🎉 Orchestration completed for workflow: ${workflowId}`);
-    console.log(`📈 Quality score: ${finalResult.metrics.qualityScore}`);
 
     return NextResponse.json(finalResult);
 
   } catch (error) {
-    console.error('❌ Orchestration failed:', error);
     return NextResponse.json({
       success: false,
       error: 'Orchestration failed',

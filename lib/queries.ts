@@ -25,15 +25,17 @@ export const createAgentJob = async (job: NewAgentJob): Promise<AgentJob> => {
 };
 
 export const getAgentJobs = async (agentId?: string, status?: string, limit = 50) => {
-  let query = db.select().from(agentJobs);
-  
-  if (agentId && status) {
-    query = query.where(and(eq(agentJobs.agentId, agentId), eq(agentJobs.status, status as any)));
-  } else if (agentId) {
-    query = query.where(eq(agentJobs.agentId, agentId));
-  } else if (status) {
-    query = query.where(eq(agentJobs.status, status as any));
+  const conditions = [];
+  if (agentId) {
+    conditions.push(eq(agentJobs.agentId, agentId));
   }
+  if (status) {
+    conditions.push(eq(agentJobs.status, status as any));
+  }
+  
+  const query = conditions.length > 0 
+    ? db.select().from(agentJobs).where(and(...conditions))
+    : db.select().from(agentJobs);
   
   return await query.orderBy(desc(agentJobs.createdAt)).limit(limit);
 };
@@ -92,19 +94,16 @@ export const getAgentJob = async (id: string) => {
 };
 
 export const getPendingJobs = async (agentType?: string, limit = 10) => {
-  let query = db
-    .select()
-    .from(agentJobs)
-    .where(eq(agentJobs.status, 'pending'));
-    
+  const conditions = [eq(agentJobs.status, 'pending')];
+  
   if (agentType) {
-    query = query.where(and(
-      eq(agentJobs.status, 'pending'),
-      eq(agentJobs.agentType, agentType as any)
-    ));
+    conditions.push(eq(agentJobs.agentType, agentType as any));
   }
   
-  return await query
+  return await db
+    .select()
+    .from(agentJobs)
+    .where(and(...conditions))
     .orderBy(agentJobs.priority, agentJobs.scheduledAt)
     .limit(limit);
 };
@@ -191,28 +190,20 @@ export const getAgentMetrics = async (
 ) => {
   const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
   
-  let query = db
+  const conditions = [sql`${agentMetrics.recordedAt} >= ${hoursAgo}`];
+  
+  if (agentId) {
+    conditions.push(eq(agentMetrics.agentId, agentId));
+  }
+  
+  if (metricName) {
+    conditions.push(eq(agentMetrics.metricName, metricName));
+  }
+  
+  const query = db
     .select()
     .from(agentMetrics)
-    .where(sql`${agentMetrics.recordedAt} >= ${hoursAgo}`);
-    
-  if (agentId && metricName) {
-    query = query.where(and(
-      eq(agentMetrics.agentId, agentId),
-      eq(agentMetrics.metricName, metricName),
-      sql`${agentMetrics.recordedAt} >= ${hoursAgo}`
-    ));
-  } else if (agentId) {
-    query = query.where(and(
-      eq(agentMetrics.agentId, agentId),
-      sql`${agentMetrics.recordedAt} >= ${hoursAgo}`
-    ));
-  } else if (metricName) {
-    query = query.where(and(
-      eq(agentMetrics.metricName, metricName),
-      sql`${agentMetrics.recordedAt} >= ${hoursAgo}`
-    ));
-  }
+    .where(and(...conditions));
   
   return await query.orderBy(desc(agentMetrics.recordedAt));
 };
@@ -267,8 +258,6 @@ export const getAgentMessages = async (
   unprocessedOnly = false,
   limit = 50
 ) => {
-  let query = db.select().from(agentMessages);
-  
   const conditions = [];
   
   if (agentId) {
@@ -283,9 +272,9 @@ export const getAgentMessages = async (
     conditions.push(eq(agentMessages.processed, false));
   }
   
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions));
-  }
+  const query = conditions.length > 0 
+    ? db.select().from(agentMessages).where(and(...conditions))
+    : db.select().from(agentMessages);
   
   return await query
     .orderBy(agentMessages.priority, desc(agentMessages.createdAt))

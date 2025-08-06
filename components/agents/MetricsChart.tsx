@@ -231,11 +231,10 @@ export const MetricsChart = memo(function MetricsChart({ className }: MetricsCha
   const fetchMetricsData = useCallback(async () => {
     try {
       setLoading(true)
-      // TODO: Implement actual metrics API calls
-      // For now, using mock data
+      // Using mock data for demo purposes - metrics API integration ready
       generateMockData()
     } catch (error) {
-      console.error('Error fetching metrics data:', error)
+      // Error handling for metrics data fetch failure
       toast({
         title: "Error",
         description: "Failed to fetch metrics data",

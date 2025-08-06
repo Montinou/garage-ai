@@ -6,6 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { localAgentService } from '@/lib/agents/local-agent-service';
+import { logger } from '@/lib/logger';
+import { withSecurity, validateRequestBody, validators, sanitizeHtml, createSecureResponse, createErrorResponse } from '@/lib/api-security';
 
 // Load environment variables for local development
 if (process.env.NODE_ENV !== 'production') {
@@ -31,34 +33,43 @@ interface AnalysisResult {
   recommendations?: string[];
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body: AnalysisRequest = await request.json();
-    const { url, htmlContent, userAgent, additionalContext } = body;
+async function analyzeHandler(request: NextRequest) {
+  const body = await request.json();
+  
+  // Validate input
+  const validation = validateRequestBody<AnalysisRequest>(body, {
+    url: validators.url,
+    htmlContent: validators.nonEmptyString,
+    userAgent: (value) => value === undefined || validators.safeString(value),
+    additionalContext: (value) => value === undefined || validators.safeString(value)
+  });
+  
+  if (!validation.valid) {
+    return createErrorResponse('Validation failed: ' + validation.errors.join(', '), 400, 'VALIDATION_ERROR');
+  }
+  
+  const { url, htmlContent, userAgent, additionalContext } = validation.data;
+  
+  // Sanitize HTML content
+  const sanitizedHtml = sanitizeHtml(htmlContent);
     
-    if (!url || !htmlContent) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: url and htmlContent' },
-        { status: 400 }
-      );
-    }
-    
-    console.log(`🔍 Analyzing page with local agent: ${url}`);
+    logger.info('Starting page analysis', { url, contentLength: htmlContent.length }, 'ai-analyzer');
 
     // Use local agent service instead of external Cloud Run
-    const result = await localAgentService.analyze(url, htmlContent, additionalContext);
+    const result = await localAgentService.analyzeContent({
+      url,
+      htmlContent: sanitizedHtml,
+      additionalContext
+    });
 
     if (!result.success) {
-      console.error('Local analysis failed:', result.error);
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 500 }
-      );
+      logger.error('Local analysis failed', new Error(result.error), { url }, 'ai-analyzer');
+      return createErrorResponse('Analysis failed', 500, 'ANALYSIS_FAILED');
     }
 
-    console.log(`✅ Local analysis completed in ${result.processingTime}ms`);
+    logger.info('Analysis completed successfully', { processingTime: result.processingTime, url }, 'ai-analyzer');
 
-    return NextResponse.json({
+    return createSecureResponse({
       success: true,
       analysis: result.data,
       processingTime: result.processingTime,
@@ -66,25 +77,17 @@ export async function POST(request: NextRequest) {
       timestamp: result.timestamp
     });
     
-  } catch (error) {
-    console.error('❌ Analysis failed:', error);
-    return NextResponse.json(
-      {
-        error: 'Analysis failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
-  }
 }
 
+export const POST = withSecurity(analyzeHandler, {
+  rateLimit: { requests: 5, windowMs: 60000 } // 5 requests per minute for analysis
+});
+
 export async function GET() {
-  return NextResponse.json({
+  return createSecureResponse({
     service: 'AI Analyzer (Local Vertex AI Agent)',
     status: 'healthy',
     type: 'local-agent',
-    vertexProject: 'analog-medium-451706-m7',
     timestamp: new Date().toISOString()
   });
 }

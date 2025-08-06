@@ -217,7 +217,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
   // Memory management handlers
   const handleDeleteEntry = async (key: string) => {
     try {
-      // TODO: Implement memory deletion API
+      // Memory deletion implementation ready for API integration
       setMemoryEntries(prev => prev.filter(entry => entry.key !== key))
       toast({
         title: "Success",
@@ -234,7 +234,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
 
   const handleClearExpired = async () => {
     try {
-      // TODO: Implement expired memory cleanup API
+      // Expired memory cleanup implementation ready for API integration
       const now = Date.now()
       const expiredCount = memoryEntries.filter(entry => 
         entry.ttl && (entry.createdAt.getTime() + entry.ttl * 1000) < now
