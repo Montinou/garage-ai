@@ -67,14 +67,13 @@ async function analyzeHandler(request: NextRequest) {
       return createErrorResponse('Analysis failed', 500, 'ANALYSIS_FAILED');
     }
 
-    logger.info('Analysis completed successfully', { processingTime: result.processingTime, url }, 'ai-analyzer');
+    logger.info('Analysis completed successfully', { url }, 'ai-analyzer');
 
     return createSecureResponse({
       success: true,
       analysis: result.data,
-      processingTime: result.processingTime,
       service: 'Local Vertex AI Agent',
-      timestamp: result.timestamp
+      timestamp: new Date().toISOString()
     });
     
 }
