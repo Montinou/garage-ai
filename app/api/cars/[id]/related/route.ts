@@ -22,7 +22,7 @@ async function getRelatedVehiclesHandler(
     const { searchParams } = new URL(request.url);
     
     // Validate vehicle ID
-    if (!validators.uuid(id) && !validators.alphanumeric(id)) {
+    if (!validators.nonEmptyString(id)) {
       return createErrorResponse('Invalid vehicle ID format', 400, 'INVALID_ID');
     }
 

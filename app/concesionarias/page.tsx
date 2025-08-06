@@ -51,7 +51,7 @@ interface SearchParams {
 }
 
 interface DealershipDirectoryPageProps {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }
 
 // Loading skeletons
@@ -86,24 +86,26 @@ function DealershipGridSkeleton() {
 }
 
 async function DealershipContent({ searchParams }: DealershipDirectoryPageProps) {
+  const params = await searchParams;
+  
   // Parse search parameters
   const filters: DealershipFilters = {
-    searchQuery: searchParams.q,
-    provinceId: searchParams.provincia,
-    cityId: searchParams.ciudad,
-    dealershipType: searchParams.tipo,
-    officialBrand: searchParams.marca,
-    isVerified: searchParams.verificadas === 'true' ? true : undefined,
-    hasVehicles: searchParams.con_vehiculos === 'true' ? true : undefined,
-    page: searchParams.pagina ? parseInt(searchParams.pagina) : 1,
+    searchQuery: params.q,
+    provinceId: params.provincia,
+    cityId: params.ciudad,
+    dealershipType: params.tipo,
+    officialBrand: params.marca,
+    isVerified: params.verificadas === 'true' ? true : undefined,
+    hasVehicles: params.con_vehiculos === 'true' ? true : undefined,
+    page: params.pagina ? parseInt(params.pagina) : 1,
     limit: 12,
     sortBy: 'name',
     sortOrder: 'asc'
   };
 
   // Handle sorting parameter
-  if (searchParams.orden) {
-    const [sortBy, sortOrder] = searchParams.orden.split('_');
+  if (params.orden) {
+    const [sortBy, sortOrder] = params.orden.split('_');
     filters.sortBy = sortBy as 'name' | 'rating' | 'vehicleCount' | 'createdAt';
     filters.sortOrder = (sortOrder as 'asc' | 'desc') || 'asc';
   }
