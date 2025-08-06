@@ -7,9 +7,9 @@ import { withSecurity, createSecureResponse, createErrorResponse } from '@/lib/a
  * GET /api/dealerships/[id]
  * Get single dealership by ID or slug
  */
-const handleGET = async (request: NextRequest, { params }: { params: { id: string } }) => {
+const handleGET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return createErrorResponse(
@@ -38,7 +38,8 @@ const handleGET = async (request: NextRequest, { params }: { params: { id: strin
     });
 
   } catch (error) {
-    logger.error('Failed to fetch dealership', error instanceof Error ? error : new Error(String(error)), { dealershipId: params.id }, 'dealerships-api');
+    const { id } = await params;
+    logger.error('Failed to fetch dealership', error instanceof Error ? error : new Error(String(error)), { dealershipId: id }, 'dealerships-api');
     
     return createErrorResponse(
       'Error al obtener datos de la concesionaria',

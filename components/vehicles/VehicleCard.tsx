@@ -19,7 +19,7 @@ interface VehicleCardProps {
   compact?: boolean; // For smaller card variant
 }
 
-export default function VehicleCard({ 
+function VehicleCard({ 
   vehicle, 
   className, 
   priority = false,
@@ -250,3 +250,6 @@ export default function VehicleCard({
     </Card>
   );
 }
+
+export { VehicleCard };
+export default VehicleCard;

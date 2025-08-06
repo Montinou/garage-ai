@@ -2,11 +2,17 @@
  * Agent system types
  */
 
+// Type definitions first
+export type AgentType = 'orchestrator' | 'explorer' | 'analyzer' | 'extractor' | 'validator' | 'scraper' | 'enricher' | 'monitor';
+export type AgentStatus = 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error' | 'paused' | 'busy' | 'initializing';
+export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'retrying';
+export type JobPriority = 'low' | 'normal' | 'high' | 'critical';
+
 export interface AgentConfig {
   id: string;
   name: string;
-  type: 'orchestrator' | 'explorer' | 'analyzer' | 'extractor' | 'validator';
-  status: 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error' | 'paused';
+  type: AgentType;
+  status: AgentStatus;
   version?: string;
   description?: string;
   capabilities?: string[];
@@ -16,7 +22,7 @@ export interface AgentJob {
   id: string;
   agentId: string;
   type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status: JobStatus;
   payload: any;
   result?: any;
   error?: string;
@@ -58,11 +64,6 @@ export interface AgentOrchestration {
   completedAt?: Date;
 }
 
-export type AgentType = 'orchestrator' | 'explorer' | 'analyzer' | 'extractor' | 'validator';
-export type AgentStatus = 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error' | 'paused';
-export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-export type JobPriority = 'low' | 'normal' | 'high' | 'critical';
-
 // Enum constants for runtime use
 export const AGENT_TYPE = {
   ORCHESTRATOR: 'orchestrator' as const,
@@ -70,6 +71,9 @@ export const AGENT_TYPE = {
   ANALYZER: 'analyzer' as const,
   EXTRACTOR: 'extractor' as const,
   VALIDATOR: 'validator' as const,
+  SCRAPER: 'scraper' as const,
+  ENRICHER: 'enricher' as const,
+  MONITOR: 'monitor' as const,
 } as const;
 
 export const AGENT_STATUS = {
@@ -80,6 +84,8 @@ export const AGENT_STATUS = {
   STOPPED: 'stopped' as const,
   ERROR: 'error' as const,
   PAUSED: 'paused' as const,
+  BUSY: 'busy' as const,
+  INITIALIZING: 'initializing' as const,
 } as const;
 
 export const JOB_STATUS = {
@@ -88,6 +94,7 @@ export const JOB_STATUS = {
   COMPLETED: 'completed' as const,
   FAILED: 'failed' as const,
   CANCELLED: 'cancelled' as const,
+  RETRYING: 'retrying' as const,
 } as const;
 
 export const JOB_PRIORITY = {
@@ -96,6 +103,12 @@ export const JOB_PRIORITY = {
   HIGH: 'high' as const,
   CRITICAL: 'critical' as const,
 } as const;
+
+// Export enum objects for direct usage in components
+export const AgentType = AGENT_TYPE;
+export const AgentStatus = AGENT_STATUS;
+export const JobStatus = JOB_STATUS;
+export const JobPriority = JOB_PRIORITY;
 
 export interface SystemHealth {
   status: 'healthy' | 'degraded' | 'unhealthy';

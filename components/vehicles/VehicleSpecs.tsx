@@ -7,7 +7,7 @@ import { formatPrice } from '@/lib/format-utils';
 import { 
   CalendarIcon, 
   GaugeIcon, 
-  EngineIcon, 
+  Cog as EngineIcon, 
   PaletteIcon, 
   FuelIcon, 
   SettingsIcon,

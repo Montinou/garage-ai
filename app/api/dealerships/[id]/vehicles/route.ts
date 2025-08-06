@@ -9,9 +9,9 @@ import { z } from 'zod';
  * GET /api/dealerships/[id]/vehicles
  * Get vehicles/inventory for a specific dealership
  */
-const handleGET = async (request: NextRequest, { params }: { params: { id: string } }) => {
+const handleGET = async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     
     if (!id) {
@@ -100,7 +100,7 @@ const handleGET = async (request: NextRequest, { params }: { params: { id: strin
     });
 
   } catch (error) {
-    logger.error('Dealership inventory search failed', error instanceof Error ? error : new Error(String(error)), { dealershipId: params.id }, 'dealerships-api');
+    logger.error('Dealership inventory search failed', error instanceof Error ? error : new Error(String(error)), { dealershipId: (await params).id }, 'dealerships-api');
     
     // Handle validation errors
     if (error instanceof z.ZodError) {

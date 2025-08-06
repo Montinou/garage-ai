@@ -209,8 +209,9 @@ async function executeAnalyzerJob(jobId: string, payload: any) {
       throw new Error(result.error || 'Analysis failed');
     }
   } catch (error) {
-    await updateJobStatus(jobId, 'failed', { error: error.message });
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await updateJobStatus(jobId, 'failed', { error: errorMessage });
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -238,8 +239,9 @@ async function executeExtractorJob(jobId: string, payload: any) {
       throw new Error(result.error || 'Extraction failed');
     }
   } catch (error) {
-    await updateJobStatus(jobId, 'failed', { error: error.message });
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await updateJobStatus(jobId, 'failed', { error: errorMessage });
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -266,8 +268,9 @@ async function executeValidatorJob(jobId: string, payload: any) {
       throw new Error(result.error || 'Validation failed');
     }
   } catch (error) {
-    await updateJobStatus(jobId, 'failed', { error: error.message });
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await updateJobStatus(jobId, 'failed', { error: errorMessage });
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -278,7 +281,7 @@ export async function GET(request: NextRequest) {
   if (workflowId) {
     // Return status of a specific workflow
     try {
-      const jobs = await getAgentJobs(workflowId);
+      const jobs = await getAgentJob(workflowId);
       return NextResponse.json({
         workflowId,
         jobs,

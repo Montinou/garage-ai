@@ -5,7 +5,7 @@ interface VehicleGridSkeletonProps {
   count?: number;
 }
 
-export default function VehicleGridSkeleton({ count = 12 }: VehicleGridSkeletonProps) {
+function VehicleGridSkeleton({ count = 12 }: VehicleGridSkeletonProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {Array.from({ length: count }, (_, i) => (
@@ -48,3 +48,6 @@ export default function VehicleGridSkeleton({ count = 12 }: VehicleGridSkeletonP
     </div>
   );
 }
+
+export { VehicleGridSkeleton };
+export default VehicleGridSkeleton;

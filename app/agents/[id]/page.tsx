@@ -67,12 +67,40 @@ const statusConfig = {
     bgColor: "bg-green-50 dark:bg-green-900/20",
     label: "Idle"
   },
+  [AgentStatus.STARTING]: {
+    icon: Play,
+    color: "bg-blue-500",
+    textColor: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    label: "Starting"
+  },
+  [AgentStatus.RUNNING]: {
+    icon: Activity,
+    color: "bg-green-500",
+    textColor: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
+    label: "Running"
+  },
   [AgentStatus.BUSY]: {
     icon: Activity,
     color: "bg-blue-500",
     textColor: "text-blue-600", 
     bgColor: "bg-blue-50 dark:bg-blue-900/20",
     label: "Busy"
+  },
+  [AgentStatus.STOPPING]: {
+    icon: Square,
+    color: "bg-orange-500",
+    textColor: "text-orange-600",
+    bgColor: "bg-orange-50 dark:bg-orange-900/20",
+    label: "Stopping"
+  },
+  [AgentStatus.STOPPED]: {
+    icon: Square,
+    color: "bg-gray-500",
+    textColor: "text-gray-600",
+    bgColor: "bg-gray-50 dark:bg-gray-900/20",
+    label: "Stopped"
   },
   [AgentStatus.ERROR]: {
     icon: AlertCircle,
@@ -81,12 +109,12 @@ const statusConfig = {
     bgColor: "bg-red-50 dark:bg-red-900/20", 
     label: "Error"
   },
-  [AgentStatus.STOPPED]: {
-    icon: Square,
-    color: "bg-gray-500",
-    textColor: "text-gray-600",
-    bgColor: "bg-gray-50 dark:bg-gray-900/20",
-    label: "Stopped"
+  [AgentStatus.PAUSED]: {
+    icon: RotateCcw,
+    color: "bg-yellow-500",
+    textColor: "text-yellow-600",
+    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+    label: "Paused"
   },
   [AgentStatus.INITIALIZING]: {
     icon: Clock,

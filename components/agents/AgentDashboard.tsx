@@ -402,9 +402,14 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value={AgentStatus.IDLE}>Idle</SelectItem>
+                    <SelectItem value={AgentStatus.STARTING}>Starting</SelectItem>
+                    <SelectItem value={AgentStatus.RUNNING}>Running</SelectItem>
                     <SelectItem value={AgentStatus.BUSY}>Busy</SelectItem>
-                    <SelectItem value={AgentStatus.ERROR}>Error</SelectItem>
+                    <SelectItem value={AgentStatus.STOPPING}>Stopping</SelectItem>
                     <SelectItem value={AgentStatus.STOPPED}>Stopped</SelectItem>
+                    <SelectItem value={AgentStatus.ERROR}>Error</SelectItem>
+                    <SelectItem value={AgentStatus.PAUSED}>Paused</SelectItem>
+                    <SelectItem value={AgentStatus.INITIALIZING}>Initializing</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as AgentType | "all")}>
@@ -413,11 +418,13 @@ export const AgentDashboard = memo(function AgentDashboard({ className }: AgentD
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value={AgentType.SCRAPER}>Scraper</SelectItem>
-                    <SelectItem value={AgentType.ANALYZER}>Analyzer</SelectItem>
-                    <SelectItem value={AgentType.ENRICHER}>Enricher</SelectItem>
-                    <SelectItem value={AgentType.VALIDATOR}>Validator</SelectItem>
                     <SelectItem value={AgentType.ORCHESTRATOR}>Orchestrator</SelectItem>
+                    <SelectItem value={AgentType.EXPLORER}>Explorer</SelectItem>
+                    <SelectItem value={AgentType.ANALYZER}>Analyzer</SelectItem>
+                    <SelectItem value={AgentType.EXTRACTOR}>Extractor</SelectItem>
+                    <SelectItem value={AgentType.VALIDATOR}>Validator</SelectItem>
+                    <SelectItem value={AgentType.SCRAPER}>Scraper</SelectItem>
+                    <SelectItem value={AgentType.ENRICHER}>Enricher</SelectItem>
                     <SelectItem value={AgentType.MONITOR}>Monitor</SelectItem>
                   </SelectContent>
                 </Select>
