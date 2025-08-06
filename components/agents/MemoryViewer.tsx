@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -127,7 +127,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
     .slice(0, 10)
 
   // Fetch memory data
-  const fetchMemoryData = async () => {
+  const fetchMemoryData = useCallback(async () => {
     try {
       const response = await fetch('/api/agents/memory')
       const data = await response.json()
@@ -201,7 +201,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
   useEffect(() => {
     fetchMemoryData()
@@ -455,7 +455,7 @@ export function MemoryViewer({ className }: MemoryViewerProps) {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+            <Select value={sortBy} onValueChange={(value: "key" | "created" | "accessed" | "size") => setSortBy(value)}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
