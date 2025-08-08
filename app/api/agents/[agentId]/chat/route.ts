@@ -4,28 +4,50 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { streamText, type Message } from 'ai';
+import { streamText, type CoreMessage } from 'ai';
 import { getModel, defaultGenConfig } from '@/lib/ai/google';
+import { 
+  logger, 
+  handleCORS, 
+  createErrorResponse, 
+  validateMessages,
+  checkRateLimit,
+  getClientId,
+  CORS_HEADERS 
+} from '@/lib/api-middleware';
 
 interface ChatRequest {
-  messages: Message[];
+  messages: CoreMessage[];
   temperature?: number;
   maxOutputTokens?: number;
 }
 
 export async function POST(request: NextRequest, { params }: { params: { agentId: string } }) {
+  const startTime = Date.now();
+  const { agentId } = params;
+  const clientId = getClientId(request);
+  
   try {
-    const { agentId } = params;
+    // Rate limiting
+    if (!checkRateLimit(clientId, 5, 60000)) { // 5 requests per minute for streaming
+      logger.warn('Rate limit exceeded for chat', { clientId, agentId }, 'agent-chat');
+      return createErrorResponse('Rate limit exceeded. Try again later.', 429, 'RATE_LIMIT_EXCEEDED');
+    }
+    
     const body: ChatRequest = await request.json();
     const { messages, temperature, maxOutputTokens } = body;
 
     // Validate required fields
-    if (!Array.isArray(messages)) {
-      return NextResponse.json(
-        { error: 'messages debe ser un array [{role, content}]' },
-        { status: 400 }
-      );
+    const messagesError = validateMessages(messages);
+    if (messagesError) {
+      return createErrorResponse(messagesError, 400, 'VALIDATION_ERROR');
     }
+
+    logger.info('Starting chat stream request', { 
+      agentId, 
+      messageCount: messages.length,
+      clientId 
+    }, 'agent-chat');
 
     // Create a readable stream for SSE
     const encoder = new TextEncoder();
@@ -35,28 +57,41 @@ export async function POST(request: NextRequest, { params }: { params: { agentId
         try {
           const { textStream, usage } = await streamText({
             model: getModel(),
-            messages: messages as Message[],
+            messages: messages as CoreMessage[],
             temperature: temperature ?? defaultGenConfig.temperature,
             maxOutputTokens: maxOutputTokens ?? defaultGenConfig.maxOutputTokens,
           });
 
+          let chunks = 0;
+          
           // Stream each text delta
           for await (const delta of textStream) {
-            const data = JSON.stringify({ delta, agentId });
+            const data = JSON.stringify({ delta, agentId, chunk: ++chunks });
             controller.enqueue(encoder.encode(`data: ${data}\n\n`));
           }
 
+          const processingTime = Date.now() - startTime;
+          
           // Send final event with usage data
           const finalData = JSON.stringify({ 
             usage, 
             agentId,
             model: process.env.MODEL_NAME ?? 'gemini-2.5-flash',
+            processingTime,
+            totalChunks: chunks,
             timestamp: new Date().toISOString()
           });
           controller.enqueue(encoder.encode(`event: end\ndata: ${finalData}\n\n`));
           
+          logger.info('Chat stream completed', { 
+            agentId, 
+            processingTime,
+            totalChunks: chunks
+          }, 'agent-chat');
+          
         } catch (error: any) {
-          console.error('Chat stream error:', error);
+          const processingTime = Date.now() - startTime;
+          logger.error('Chat stream error', error, { agentId, clientId, processingTime }, 'agent-chat');
           const errorData = JSON.stringify({ 
             error: error?.message ?? 'LLM_ERROR',
             agentId,
@@ -74,45 +109,34 @@ export async function POST(request: NextRequest, { params }: { params: { agentId
         'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
-        // CORS headers
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        ...CORS_HEADERS,
       },
     });
 
   } catch (error: any) {
-    console.error('Chat error:', error);
-    return NextResponse.json(
-      { 
-        error: 'LLM_ERROR', 
-        detail: error?.message || 'Unknown error occurred',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
+    const processingTime = Date.now() - startTime;
+    logger.error('Chat request failed', error, { agentId, clientId, processingTime }, 'agent-chat');
+    return createErrorResponse('LLM_ERROR: ' + (error?.message || 'Unknown error occurred'), 500, 'LLM_ERROR');
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+  return handleCORS();
 }
 
 export async function GET(request: NextRequest, { params }: { params: { agentId: string } }) {
   const { agentId } = params;
-  return NextResponse.json({
+  return new NextResponse(JSON.stringify({
     service: 'Agent Chat (Vercel AI SDK)',
     agentId,
     model: process.env.MODEL_NAME ?? 'gemini-2.5-flash',
     streaming: true,
     status: 'healthy',
     timestamp: new Date().toISOString()
+  }), {
+    headers: {
+      'Content-Type': 'application/json',
+      ...CORS_HEADERS,
+    },
   });
 }
