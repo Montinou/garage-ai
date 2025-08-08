@@ -1,13 +1,13 @@
 /**
- * Main Agent Orchestration API
- * Coordinates the 3-agent workflow: Analyzer → Extractor → Validator
+ * Updated Agent Orchestration using new Vercel AI SDK endpoints
+ * Example implementation showing how to migrate from legacy endpoints
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createAgentJob, updateJobStatus, getAgentJob } from '@/lib/queries';
+import { createAgentJob, updateJobStatus } from '@/lib/queries';
 
 interface OrchestrationRequest {
-  target: string; // URL or target specification
+  target: string;
   extractionType: 'vehicle_listings' | 'single_vehicle' | 'batch_vehicles';
   maxPages?: number;
   options?: {
@@ -16,7 +16,6 @@ interface OrchestrationRequest {
     userAgent?: string;
   };
 }
-
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,11 +29,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-
-    // Create the orchestration workflow
     const workflowId = `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Step 1: Create Analyzer Job
+    // Step 1: Create and execute Analyzer Job using new complete endpoint
     const analyzerJob = await createAgentJob({
       agentId: `analyzer_${workflowId}`,
       agentType: 'analyzer',
@@ -50,9 +47,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-
-    // Immediately start the analyzer job
-    const analyzerResult = await executeAnalyzerJob(analyzerJob.id, {
+    const analyzerResult = await executeAnalyzerJobWithNewAPI(analyzerJob.id, {
       url: target,
       extractionType,
       maxPages,
@@ -69,7 +64,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Step 2: Create Extractor Job based on analysis
+    // Step 2: Create and execute Extractor Job using new object endpoint
     const extractorJob = await createAgentJob({
       agentId: `extractor_${workflowId}`,
       agentType: 'extractor',
@@ -84,9 +79,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-
-    // Execute extraction based on analysis
-    const extractorResult = await executeExtractorJob(extractorJob.id, {
+    const extractorResult = await executeExtractorJobWithNewAPI(extractorJob.id, {
       url: target,
       analysisResult: analyzerResult.analysis,
       options
@@ -103,9 +96,9 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Step 3: Create Validator Job if requested
+    // Step 3: Optional validation using chat endpoint for interactive validation
     let validatorResult = null;
-    if (options.validateData !== false) { // Default to true
+    if (options.validateData !== false) {
       const validatorJob = await createAgentJob({
         agentId: `validator_${workflowId}`,
         agentType: 'validator',
@@ -123,8 +116,7 @@ export async function POST(request: NextRequest) {
         }
       });
 
-
-      validatorResult = await executeValidatorJob(validatorJob.id, {
+      validatorResult = await executeValidatorJobWithNewAPI(validatorJob.id, {
         vehicleData: extractorResult.vehicleData,
         context: {
           sourceUrl: target,
@@ -161,9 +153,9 @@ export async function POST(request: NextRequest) {
         extractor: extractorJob.id,
         validator: validatorResult ? `validator_${workflowId}` : null
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      apiVersion: 'v2-vercel-ai-sdk'
     };
-
 
     return NextResponse.json(finalResult);
 
@@ -177,25 +169,78 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to execute analyzer job
-async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown>) {
+// Updated analyzer function using new complete endpoint
+async function executeAnalyzerJobWithNewAPI(jobId: string, payload: Record<string, unknown>) {
   try {
-    await updateJobStatus(jobId, 'running', undefined);
+    await updateJobStatus(jobId, 'running', null);
     
+    // Use new complete endpoint with proper system message
     const analyzeResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/analyzer/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: `Analyze this URL for vehicle data extraction: ${payload.url}`,
-        system: "You are an expert web content analyzer that identifies data extraction strategies for vehicle listings."
+        prompt: `Analiza esta página web para extracción de datos de vehículos:
+        
+URL: ${payload.url}
+Tipo de extracción: ${payload.extractionType}
+Páginas máximas: ${payload.maxPages}
+
+Por favor, analiza la estructura de la página y proporciona un análisis estructurado en formato JSON.`,
+        system: `Eres un analizador experto de contenido web, especializado en sitios de listados de vehículos.
+
+FORMATO DE SALIDA DEL ANÁLISIS:
+Siempre responde con un JSON válido en esta estructura exacta:
+{
+  "pageStructure": {
+    "dataFields": {
+      "make": "descripcion_ubicacion",
+      "model": "descripcion_ubicacion", 
+      "year": "descripcion_ubicacion",
+      "price": "descripcion_ubicacion",
+      "mileage": "descripcion_ubicacion",
+      "features": "descripcion_ubicacion",
+      "images": "descripcion_ubicacion",
+      "description": "descripcion_ubicacion"
+    },
+    "selectors": {
+      "make": "selector_css_o_xpath",
+      "model": "selector_css_o_xpath",
+      "year": "selector_css_o_xpath", 
+      "price": "selector_css_o_xpath",
+      "mileage": "selector_css_o_xpath",
+      "features": "selector_css_o_xpath",
+      "images": "selector_css_o_xpath",
+      "description": "selector_css_o_xpath"
+    },
+    "extractionMethod": "dom"
+  },
+  "challenges": ["desafio1", "desafio2"],
+  "confidence": 0.85,
+  "estimatedTime": 30,
+  "recommendations": ["recomendacion1", "recomendacion2"]
+}`,
+        temperature: 0.3,
+        maxOutputTokens: 2048
       })
     });
 
     const result = await analyzeResponse.json();
     
-    if (result.success) {
-      await updateJobStatus(jobId, 'completed', result);
-      return result;
+    if (result.text) {
+      // Parse JSON from the text response
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const analysis = JSON.parse(jsonMatch[0]);
+        await updateJobStatus(jobId, 'completed', { analysis });
+        return { 
+          success: true, 
+          analysis, 
+          processingTime: result.processingTime,
+          model: result.model 
+        };
+      } else {
+        throw new Error('No valid JSON found in analyzer response');
+      }
     } else {
       throw new Error(result.error || 'Analysis failed');
     }
@@ -206,25 +251,39 @@ async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown
   }
 }
 
-// Helper function to execute extractor job
-async function executeExtractorJob(jobId: string, payload: Record<string, unknown>) {
+// Updated extractor function using new object endpoint
+async function executeExtractorJobWithNewAPI(jobId: string, payload: Record<string, unknown>) {
   try {
-    await updateJobStatus(jobId, 'running', undefined);
+    await updateJobStatus(jobId, 'running', null);
     
+    // Use new object endpoint with vehicle schema
     const extractResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/extractor/object`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: `Extract vehicle data from this URL: ${payload.url}`,
-        schema: "vehicle"
+        prompt: `Extrae los datos del vehículo del siguiente contenido web:
+
+URL: ${payload.url}
+Contexto del análisis: ${JSON.stringify(payload.analysisResult)}
+
+Por favor, extrae y estructura los datos del vehículo en formato JSON.`,
+        schema: 'vehicle',
+        temperature: 0.1,
+        maxOutputTokens: 1024
       })
     });
 
     const result = await extractResponse.json();
     
-    if (result.success) {
-      await updateJobStatus(jobId, 'completed', result);
-      return result;
+    if (result.object) {
+      await updateJobStatus(jobId, 'completed', { vehicleData: result.object });
+      return { 
+        success: true, 
+        vehicleData: result.object, 
+        processingTime: result.processingTime,
+        model: result.model,
+        warnings: result.warnings 
+      };
     } else {
       throw new Error(result.error || 'Extraction failed');
     }
@@ -235,25 +294,57 @@ async function executeExtractorJob(jobId: string, payload: Record<string, unknow
   }
 }
 
-// Helper function to execute validator job
-async function executeValidatorJob(jobId: string, payload: Record<string, unknown>) {
+// Updated validator function using new complete endpoint
+async function executeValidatorJobWithNewAPI(jobId: string, payload: Record<string, unknown>) {
   try {
-    await updateJobStatus(jobId, 'running', undefined);
+    await updateJobStatus(jobId, 'running', null);
     
+    // Use new complete endpoint for validation
     const validateResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/validator/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: `Validate this vehicle data: ${JSON.stringify(payload.vehicleData)}`,
-        system: "You are an expert data validator that ensures vehicle data quality and completeness."
+        prompt: `Valida los siguientes datos de vehículo extraídos:
+
+Datos del vehículo: ${JSON.stringify(payload.vehicleData)}
+Contexto: ${JSON.stringify(payload.context)}
+
+Proporciona una validación detallada con puntuación de calidad.`,
+        system: `Eres un validador experto de datos de vehículos. Tu trabajo es revisar la calidad y precisión de los datos extraídos.
+
+FORMATO DE SALIDA:
+Responde con un JSON válido:
+{
+  "isValid": true/false,
+  "qualityScore": 0.0-1.0,
+  "errors": ["error1", "error2"],
+  "warnings": ["warning1", "warning2"],
+  "suggestions": ["suggestion1", "suggestion2"],
+  "completeness": 0.0-1.0,
+  "confidence": 0.0-1.0
+}`,
+        temperature: 0.2,
+        maxOutputTokens: 1024
       })
     });
 
     const result = await validateResponse.json();
     
-    if (result.success) {
-      await updateJobStatus(jobId, 'completed', result);
-      return result;
+    if (result.text) {
+      // Parse JSON from the text response
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const validation = JSON.parse(jsonMatch[0]);
+        await updateJobStatus(jobId, 'completed', { validation });
+        return { 
+          success: true, 
+          validation, 
+          processingTime: result.processingTime,
+          model: result.model 
+        };
+      } else {
+        throw new Error('No valid JSON found in validator response');
+      }
     } else {
       throw new Error(result.error || 'Validation failed');
     }
@@ -271,10 +362,10 @@ export async function GET(request: NextRequest) {
   if (workflowId) {
     // Return status of a specific workflow
     try {
-      const jobs = await getAgentJob(workflowId);
+      // This would need to be implemented to work with the new API structure
       return NextResponse.json({
         workflowId,
-        jobs,
+        message: 'Workflow status tracking not yet implemented for new API',
         timestamp: new Date().toISOString()
       });
     } catch {
@@ -285,9 +376,15 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    service: 'Agent Orchestrator',
-    status: 'healthy',
+    service: 'Agent Orchestrator (New Vercel AI SDK)',
+    version: 'v2',
     availableAgents: ['analyzer', 'extractor', 'validator'],
+    endpoints: {
+      analyzer: '/api/agents/analyzer/complete',
+      extractor: '/api/agents/extractor/object', 
+      validator: '/api/agents/validator/complete'
+    },
+    status: 'healthy',
     timestamp: new Date().toISOString()
   });
 }

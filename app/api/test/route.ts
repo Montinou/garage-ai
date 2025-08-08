@@ -36,14 +36,12 @@ export async function POST(request: NextRequest) {
     `;
 
     // Step 1: Test Analyzer
-    const analyzeResponse = await fetch(`${request.nextUrl.origin}/api/ai/analyze`, {
+    const analyzeResponse = await fetch(`${request.nextUrl.origin}/api/agents/analyzer/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: testUrl,
-        htmlContent: testHtmlContent,
-        userAgent: 'garage-ai-test/1.0',
-        additionalContext: 'Test de extracción de datos de vehículo en español'
+        prompt: `Analyze this test vehicle content: ${testHtmlContent}`,
+        system: "You are an expert web content analyzer that identifies data extraction strategies for vehicle listings."
       })
     });
 
@@ -54,16 +52,12 @@ export async function POST(request: NextRequest) {
     const analysisResult = await analyzeResponse.json();
 
     // Step 2: Test Extractor
-    const extractResponse = await fetch(`${request.nextUrl.origin}/api/ai/extract`, {
+    const extractResponse = await fetch(`${request.nextUrl.origin}/api/agents/extractor/object`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: testUrl,
-        content: testHtmlContent,
-        extractionStrategy: analysisResult.analysis?.pageStructure || {
-          method: 'dom',
-          selectors: {}
-        }
+        prompt: `Extract vehicle data from this content: ${testHtmlContent}`,
+        schema: "vehicle"
       })
     });
 
@@ -74,16 +68,12 @@ export async function POST(request: NextRequest) {
     const extractionResult = await extractResponse.json();
 
     // Step 3: Test Validator
-    const validateResponse = await fetch(`${request.nextUrl.origin}/api/ai/validate`, {
+    const validateResponse = await fetch(`${request.nextUrl.origin}/api/agents/validator/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        vehicleData: extractionResult.vehicleData,
-        context: {
-          sourceUrl: testUrl,
-          extractionMethod: 'ai-agent',
-          extractionConfidence: analysisResult.analysis?.confidence || 0.5
-        }
+        prompt: `Validate this extracted vehicle data: ${JSON.stringify(extractionResult.object)}`,
+        system: "You are an expert data validator that ensures vehicle data quality and completeness."
       })
     });
 
