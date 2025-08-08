@@ -16,7 +16,7 @@ interface RateLimitConfig {
 
 // Default rate limits
 const DEFAULT_RATE_LIMITS: { [key: string]: RateLimitConfig } = {
-  '/api/ai/*': { requests: 10, windowMs: 60000 }, // 10 requests per minute for AI endpoints
+  '/api/agents/*': { requests: 10, windowMs: 60000 }, // 10 requests per minute for agent endpoints
   '/api/cars/*': { requests: 100, windowMs: 60000 }, // 100 requests per minute for car searches
   default: { requests: 50, windowMs: 60000 } // 50 requests per minute default
 };

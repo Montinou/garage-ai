@@ -81,10 +81,13 @@ export async function GET(request: Request) {
       try {
         
         // Step 1: Explore the website to find vehicle URLs
-        const exploreResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/ai/explore`, {
+        const exploreResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/agents/explorer/complete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: explorationUrl })
+          body: JSON.stringify({ 
+            prompt: `Explore this website to find vehicle listings: ${explorationUrl}`,
+            system: "You are an expert website explorer that discovers vehicle URLs and pagination links."
+          })
         });
         
         if (!exploreResponse.ok) {
@@ -114,12 +117,12 @@ export async function GET(request: Request) {
               continue;
             }
 
-            const extractResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/ai/extract`, {
+            const extractResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/agents/extractor/object`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
-                url: vehicleUrl.url,
-                content: vehicleContent 
+                prompt: `Extract vehicle data from this content: ${vehicleContent}`,
+                schema: "vehicle"
               })
             });
             

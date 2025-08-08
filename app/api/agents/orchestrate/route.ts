@@ -180,15 +180,14 @@ export async function POST(request: NextRequest) {
 // Helper function to execute analyzer job
 async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown>) {
   try {
-    await updateJobStatus(jobId, 'running', null);
+    await updateJobStatus(jobId, 'running', undefined);
     
-    const analyzeResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/ai/analyze`, {
+    const analyzeResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/analyzer/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: payload.url,
-        htmlContent: `Analyze this URL: ${payload.url}`, // In real implementation, fetch actual HTML
-        additionalContext: `Extraction type: ${payload.extractionType}, Max pages: ${payload.maxPages}`
+        prompt: `Analyze this URL for vehicle data extraction: ${payload.url}`,
+        system: "You are an expert web content analyzer that identifies data extraction strategies for vehicle listings."
       })
     });
 
@@ -210,15 +209,14 @@ async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown
 // Helper function to execute extractor job
 async function executeExtractorJob(jobId: string, payload: Record<string, unknown>) {
   try {
-    await updateJobStatus(jobId, 'running', null);
+    await updateJobStatus(jobId, 'running', undefined);
     
-    const extractResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/ai/extract`, {
+    const extractResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/extractor/object`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: payload.url,
-        content: `Extract vehicle data from: ${payload.url}`, // In real implementation, use actual content
-        extractionStrategy: payload.analysisResult.pageStructure
+        prompt: `Extract vehicle data from this URL: ${payload.url}`,
+        schema: "vehicle"
       })
     });
 
@@ -240,14 +238,14 @@ async function executeExtractorJob(jobId: string, payload: Record<string, unknow
 // Helper function to execute validator job
 async function executeValidatorJob(jobId: string, payload: Record<string, unknown>) {
   try {
-    await updateJobStatus(jobId, 'running', null);
+    await updateJobStatus(jobId, 'running', undefined);
     
-    const validateResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/ai/validate`, {
+    const validateResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/validator/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        vehicleData: payload.vehicleData,
-        context: payload.context
+        prompt: `Validate this vehicle data: ${JSON.stringify(payload.vehicleData)}`,
+        system: "You are an expert data validator that ensures vehicle data quality and completeness."
       })
     });
 
