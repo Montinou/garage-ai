@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<taskPlan version="1.0" project="garage-ai">
+<taskplan version="1.0" project="garage-ai">
   <meta>
     <description>Plan de tareas para agentes de scraping de vehículos en múltiples marketplaces, con normas de cortesía, límites de coste y validaciones.</description>
     <owner>Montinou</owner>
@@ -28,13 +28,13 @@
       </io>
       <limits>
         <concurrency>${SCRAPER_CONCURRENCY}</concurrency>
-        <timeoutMs>${REQUEST_TIMEOUT_MS}</timeoutMs>
-        <maxPagesPerRun>${MAX_PAGES_PER_RUN}</maxPagesPerRun>
-        <maxNewItemsPerRun>${MAX_NEW_ITEMS_PER_RUN}</maxNewItemsPerRun>
+        <timeoutms>${REQUEST_TIMEOUT_MS}</timeoutms>
+        <maxpagesperrun>${MAX_PAGES_PER_RUN}</maxpagesperrun>
+        <maxnewitemsperrun>${MAX_NEW_ITEMS_PER_RUN}</maxnewitemsperrun>
       </limits>
       <politeness>
-        <userAgent>${SCRAPER_USER_AGENT}</userAgent>
-        <delayMs min="750" max="2500"/>
+        <useragent>${SCRAPER_USER_AGENT}</useragent>
+        <delayms min="750" max="2500"/>
         <proxy url="${PROXY_URL}"/>
       </politeness>
       <exploration>
@@ -50,11 +50,11 @@
       </exploration>
       <pagination>
         <cursor type="page" param="page" start="1" step="1"/>
-        <stopWhen>no-new-items OR page &gt;= maxPagesPerRun</stopWhen>
+        <stopwhen>no-new-items OR page &gt;= maxPagesPerRun</stopwhen>
       </pagination>
       <normalization>
         <currency default="USD"/>
-        <distanceUnits default="km"/>
+        <distanceunits default="km"/>
         <schemas>
           <schema name="Listing" version="1.0"/>
           <schema name="Opportunity" version="1.0"/>
@@ -66,27 +66,27 @@
   <sources>
     <!-- Rellena las seedUrls y patrones de cada marketplace -->
     <source id="marketplaceA">
-      <seedUrls>
+      <seedurls>
         <url>https://exampleA.com/search?make=toyota&amp;model=corolla</url>
         <url>https://exampleA.com/search?make=ford&amp;model=mustang</url>
-      </seedUrls>
+      </seedurls>
       <explore>
         <allow pattern="^https://exampleA\\.com/search"/>
         <allow pattern="^https://exampleA\\.com/listing/"/>
       </explore>
-      <listingUrl pattern="^https://exampleA\\.com/listing/[^/?#]+"/>
+      <listingurl pattern="^https://exampleA\\.com/listing/[^/?#]+"/>
       <dedupe key="canonicalUrl|vin|externalId"/>
     </source>
 
     <source id="marketplaceB">
-      <seedUrls>
+      <seedurls>
         <url>https://exampleB.com/cars?sort=newest</url>
-      </seedUrls>
+      </seedurls>
       <explore>
         <allow pattern="^https://exampleB\\.com/cars"/>
         <allow pattern="^https://exampleB\\.com/vehicles/"/>
       </explore>
-      <listingUrl pattern="^https://exampleB\\.com/vehicles/[^/?#]+"/>
+      <listingurl pattern="^https://exampleB\\.com/vehicles/[^/?#]+"/>
       <dedupe key="canonicalUrl|vin|externalId"/>
     </source>
   </sources>
@@ -99,9 +99,9 @@
     <schedule id="scrape-all" path="/api/cron/scrape-all" cron="0 3 * * *"/>
   </schedules>
 
-  <successCriteria>
+  <successcriteria>
     <criterion>0 errores no manejados</criterion>
     <criterion>&gt; 80% de elementos válidos tras validación de esquema</criterion>
     <criterion>&lt; 1% duplicados nuevos por run</criterion>
-  </successCriteria>
-</taskPlan>
+  </successcriteria>
+</taskplan>
