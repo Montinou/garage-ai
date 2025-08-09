@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<taskPlan version="1.0" project="garage-ai">
+  <meta>
+    <description>Plan de tareas para agentes de scraping de vehículos en múltiples marketplaces, con normas de cortesía, límites de coste y validaciones.</description>
+    <owner>Montinou</owner>
+    <env>
+      <var name="SCRAPER_CONCURRENCY" default="3"/>
+      <var name="SCRAPER_USER_AGENT" default="GarageAIBot/1.0 (+https://ai-garage.vercel.app)"/>
+      <var name="PROXY_URL" default=""/>
+      <var name="MAX_PAGES_PER_RUN" default="10"/>
+      <var name="MAX_NEW_ITEMS_PER_RUN" default="200"/>
+      <var name="REQUEST_TIMEOUT_MS" default="20000"/>
+    </env>
+  </meta>
+
+  <agents>
+    <agent id="scraper" goal="Descubrir y normalizar anuncios de vehículos">
+      <principles>
+        <rule>Respetar robots.txt y Términos de Servicio.</rule>
+        <rule>Usar User-Agent configurable y rotación opcional.</rule>
+        <rule>Controlar concurrencia y aplicar backoff exponencial con jitter.</rule>
+        <rule>Validar y normalizar datos con esquemas estrictos.</rule>
+        <rule>Evitar duplicados por URL canónica, VIN o externalId estable.</rule>
+      </principles>
+      <io>
+        <input>seed URLs, parámetros de paginación, filtros por tipo/ubicación/precio.</input>
+        <output>Listing normalizado con price, currency, year, make, model, trim, mileage, location, photos, postedAt, scrapedAt, y raw snapshot opcional.</output>
+      </io>
+      <limits>
+        <concurrency>${SCRAPER_CONCURRENCY}</concurrency>
+        <timeoutMs>${REQUEST_TIMEOUT_MS}</timeoutMs>
+        <maxPagesPerRun>${MAX_PAGES_PER_RUN}</maxPagesPerRun>
+        <maxNewItemsPerRun>${MAX_NEW_ITEMS_PER_RUN}</maxNewItemsPerRun>
+      </limits>
+      <politeness>
+        <userAgent>${SCRAPER_USER_AGENT}</userAgent>
+        <delayMs min="750" max="2500"/>
+        <proxy url="${PROXY_URL}"/>
+      </politeness>
+      <exploration>
+        <follow>
+          <allow pattern="^https?://[^/]+/search.*"/>
+          <allow pattern="^https?://[^/]+/listing/.*"/>
+        </follow>
+        <deny>
+          <deny pattern="\\?(utm_|fbclid|gclid)"/>
+          <deny pattern="\\.(png|jpe?g|gif|svg|ico)$"/>
+          <deny pattern="^mailto:|^tel:"/>
+        </deny>
+      </exploration>
+      <pagination>
+        <cursor type="page" param="page" start="1" step="1"/>
+        <stopWhen>no-new-items OR page &gt;= maxPagesPerRun</stopWhen>
+      </pagination>
+      <normalization>
+        <currency default="USD"/>
+        <distanceUnits default="km"/>
+        <schemas>
+          <schema name="Listing" version="1.0"/>
+          <schema name="Opportunity" version="1.0"/>
+        </schemas>
+      </normalization>
+    </agent>
+  </agents>
+
+  <sources>
+    <!-- Rellena las seedUrls y patrones de cada marketplace -->
+    <source id="marketplaceA">
+      <seedUrls>
+        <url>https://exampleA.com/search?make=toyota&amp;model=corolla</url>
+        <url>https://exampleA.com/search?make=ford&amp;model=mustang</url>
+      </seedUrls>
+      <explore>
+        <allow pattern="^https://exampleA\\.com/search"/>
+        <allow pattern="^https://exampleA\\.com/listing/"/>
+      </explore>
+      <listingUrl pattern="^https://exampleA\\.com/listing/[^/?#]+"/>
+      <dedupe key="canonicalUrl|vin|externalId"/>
+    </source>
+
+    <source id="marketplaceB">
+      <seedUrls>
+        <url>https://exampleB.com/cars?sort=newest</url>
+      </seedUrls>
+      <explore>
+        <allow pattern="^https://exampleB\\.com/cars"/>
+        <allow pattern="^https://exampleB\\.com/vehicles/"/>
+      </explore>
+      <listingUrl pattern="^https://exampleB\\.com/vehicles/[^/?#]+"/>
+      <dedupe key="canonicalUrl|vin|externalId"/>
+    </source>
+  </sources>
+
+  <schedules>
+    <!-- Estos paths deben existir como rutas de API en Next.js y se programan con Vercel Cron -->
+    <schedule id="scrape-marketplaceA" path="/api/cron/scrape?source=marketplaceA" cron="0 * * * *"/>
+    <schedule id="scrape-marketplaceB" path="/api/cron/scrape?source=marketplaceB" cron="10 * * * *"/>
+    <!-- Barrido general nocturno -->
+    <schedule id="scrape-all" path="/api/cron/scrape-all" cron="0 3 * * *"/>
+  </schedules>
+
+  <successCriteria>
+    <criterion>0 errores no manejados</criterion>
+    <criterion>&gt; 80% de elementos válidos tras validación de esquema</criterion>
+    <criterion>&lt; 1% duplicados nuevos por run</criterion>
+  </successCriteria>
+</taskPlan>
