@@ -34,21 +34,26 @@ type RunOptions = {
 }
 
 async function runScrape(source: string, opts: RunOptions = {}) {
-  // Punto único para integrar tus adaptadores y normalización
-  // Reemplaza esta función con tu pipeline real (adapters -> normalize -> upsert)
+  const { VehicleScraperService, DefaultSources } = await import('@/lib/scraper-service')
+  
   const startedAt = Date.now()
-  const stats = { pages: 0, found: 0, upserts: 0 }
+  
+  // Get source configuration
+  const sourceConfig = DefaultSources[source]
+  if (!sourceConfig) {
+    throw new Error(`Source configuration not found for: ${source}`)
+  }
 
-  // Sugerencia: centraliza la obtención del adaptador por source
-  // const { getAdapter } = await import('@/adapters') // si existe
-  // const adapter = getAdapter(source)
-
-  // Placeholder: lanza error si aún no está conectado al adaptador real
-  // throw new Error('Adapter no implementado para ' + source)
-
-  // Si ya tienes un script/servicio, invócalo aquí.
-  // await myScrapePipeline({ source, seedUrls: opts.seedUrls })
-
+  // Initialize scraper service
+  const scraperService = new VehicleScraperService()
+  
+  // Run scraping with optional seed URL override
+  const result = await scraperService.scrapeSource(sourceConfig, opts)
+  
   const finishedAt = Date.now()
-  return { durationMs: finishedAt - startedAt, stats }
+  return { 
+    durationMs: finishedAt - startedAt, 
+    stats: result.stats,
+    source: sourceConfig.id 
+  }
 }

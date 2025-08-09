@@ -134,9 +134,9 @@ const nextConfig = {
   },
 
   // Performance optimizations
-  experimental: {
-    optimizeCss: true,
-  },
+  // experimental: {
+  //   optimizeCss: true, // Disabled due to missing critters dependency
+  // },
   
   // Bundle analyzer (only in development)
   ...(process.env.ANALYZE === 'true' && {

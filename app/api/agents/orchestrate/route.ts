@@ -4,7 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createAgentJob, updateJobStatus, getAgentJob } from '@/lib/queries';
+
+// Make this route dynamic to prevent pre-rendering at build time
+export const dynamic = 'force-dynamic';
 
 interface OrchestrationRequest {
   target: string; // URL or target specification
@@ -20,6 +22,9 @@ interface OrchestrationRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Import database functions only when actually needed
+    const { createAgentJob, updateJobStatus } = await import('@/lib/queries');
+    
     const body: OrchestrationRequest = await request.json();
     const { target, extractionType, maxPages = 10, options = {} } = body;
 
@@ -180,6 +185,7 @@ export async function POST(request: NextRequest) {
 // Helper function to execute analyzer job
 async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown>) {
   try {
+    const { updateJobStatus } = await import('@/lib/queries');
     await updateJobStatus(jobId, 'running', undefined);
     
     const analyzeResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/analyzer/complete`, {
@@ -194,6 +200,7 @@ async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown
     const result = await analyzeResponse.json();
     
     if (result.success) {
+      const { updateJobStatus } = await import('@/lib/queries');
       await updateJobStatus(jobId, 'completed', result);
       return result;
     } else {
@@ -201,6 +208,7 @@ async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const { updateJobStatus } = await import('@/lib/queries');
     await updateJobStatus(jobId, 'failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
@@ -209,6 +217,7 @@ async function executeAnalyzerJob(jobId: string, payload: Record<string, unknown
 // Helper function to execute extractor job
 async function executeExtractorJob(jobId: string, payload: Record<string, unknown>) {
   try {
+    const { updateJobStatus } = await import('@/lib/queries');
     await updateJobStatus(jobId, 'running', undefined);
     
     const extractResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/extractor/object`, {
@@ -223,6 +232,7 @@ async function executeExtractorJob(jobId: string, payload: Record<string, unknow
     const result = await extractResponse.json();
     
     if (result.success) {
+      const { updateJobStatus } = await import('@/lib/queries');
       await updateJobStatus(jobId, 'completed', result);
       return result;
     } else {
@@ -230,6 +240,7 @@ async function executeExtractorJob(jobId: string, payload: Record<string, unknow
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const { updateJobStatus } = await import('@/lib/queries');
     await updateJobStatus(jobId, 'failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
@@ -238,6 +249,7 @@ async function executeExtractorJob(jobId: string, payload: Record<string, unknow
 // Helper function to execute validator job
 async function executeValidatorJob(jobId: string, payload: Record<string, unknown>) {
   try {
+    const { updateJobStatus } = await import('@/lib/queries');
     await updateJobStatus(jobId, 'running', undefined);
     
     const validateResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/agents/validator/complete`, {
@@ -252,6 +264,7 @@ async function executeValidatorJob(jobId: string, payload: Record<string, unknow
     const result = await validateResponse.json();
     
     if (result.success) {
+      const { updateJobStatus } = await import('@/lib/queries');
       await updateJobStatus(jobId, 'completed', result);
       return result;
     } else {
@@ -259,6 +272,7 @@ async function executeValidatorJob(jobId: string, payload: Record<string, unknow
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const { updateJobStatus } = await import('@/lib/queries');
     await updateJobStatus(jobId, 'failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
@@ -271,6 +285,7 @@ export async function GET(request: NextRequest) {
   if (workflowId) {
     // Return status of a specific workflow
     try {
+      const { getAgentJob } = await import('@/lib/queries');
       const jobs = await getAgentJob(workflowId);
       return NextResponse.json({
         workflowId,
